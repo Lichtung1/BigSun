@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>bigsun — Wall Control</title>
+<style>
+  :root {
+    --gray: #c0c0c0; --dgray: #808080; --lgray: #dfdfdf;
+    --navy1: #000080; --navy2: #1084d0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #008080;
+    font-family: Tahoma, "MS Sans Serif", Geneva, sans-serif;
+    font-size: 12px; color: #000;
+    padding: 10px;
+  }
+  .raised { box-shadow: inset -1px -1px 0 #000, inset 1px 1px 0 #fff, inset -2px -2px 0 var(--dgray), inset 2px 2px 0 var(--lgray); }
+  .sunken { box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #fff, inset 2px 2px 0 var(--dgray), inset -2px -2px 0 var(--lgray); }
+  .btn {
+    background: var(--gray); border: 0; font: inherit; cursor: pointer;
+    padding: 7px 14px; min-height: 38px; min-width: 84px;
+    box-shadow: inset -1px -1px 0 #000, inset 1px 1px 0 #fff, inset -2px -2px 0 var(--dgray), inset 2px 2px 0 var(--lgray);
+  }
+  .btn:active { box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #fff, inset 2px 2px 0 var(--dgray); padding: 8px 13px 6px 15px; }
+  .btn:disabled { color: var(--dgray); text-shadow: 1px 1px 0 #fff; cursor: default; }
+
+  .window { background: var(--gray); padding: 3px; max-width: 980px; margin: 0 auto 12px; }
+  .titlebar {
+    background: linear-gradient(90deg, var(--navy1), var(--navy2));
+    color: #fff; font-weight: bold; padding: 4px 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .titlebar .sp { flex: 1; }
+  .body { padding: 8px; }
+
+  /* toolbar */
+  #bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 6px 8px; }
+  #bar .stat { background: #fff; padding: 5px 10px; font-weight: bold; }
+  #dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #d00; vertical-align: -1px; margin-right: 5px; }
+  #dot.ok { background: #0a0; }
+  #bar label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
+
+  /* pending queue */
+  #queue { display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--gray); padding: 8px; display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+  .card .pic {
+    background: #101014; padding: 6px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card .pic img { display: block; max-width: min(46vw, 260px); max-height: 170px; }
+  .card .meta { flex: 1 1 140px; display: flex; flex-direction: column; gap: 6px; min-width: 130px; }
+  .card .nm { font-weight: bold; font-size: 14px; word-break: break-all; }
+  .card .age { color: #333; }
+  .card .acts { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
+  .card .ok  { font-weight: bold; }
+  #emptyq { padding: 18px; text-align: center; color: #333; background: #fff; }
+
+  /* approved strip */
+  #strip { display: flex; gap: 10px; overflow-x: auto; padding: 8px; background: #101014; }
+  .thumb { flex: 0 0 auto; background: var(--gray); padding: 5px; text-align: center; width: 128px; }
+  .thumb img { display: block; width: 118px; height: 84px; object-fit: contain; background: #101014; margin: 0 auto; }
+  .thumb .nm { font-weight: bold; margin: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .thumb .btn { min-width: 0; width: 100%; min-height: 30px; padding: 4px; }
+
+  .hint { color: #fff; max-width: 980px; margin: 0 auto 10px; opacity: .85; }
+
+  /* dialogs */
+  #shade { position: fixed; inset: 0; background: rgba(0,0,0,.25); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+  #shade.show { display: flex; }
+  .dlg { background: var(--gray); padding: 3px; width: min(92vw, 340px); }
+  .dlg .body { padding: 14px 12px; }
+  .dlg .msg { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .dlg .ic { font-size: 30px; line-height: 1; }
+  .dlg input[type=password] {
+    width: 100%; font: inherit; padding: 6px; border: 0; background: #fff;
+    box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #fff, inset 2px 2px 0 var(--dgray);
+  }
+  .dlg .row { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="window raised">
+  <div class="titlebar"><span>&#127774; bigsun &mdash; Wall Control</span><span class="sp"></span></div>
+  <div id="bar" class="body">
+    <span class="stat sunken"><span id="dot"></span>Queue: <span id="nPending">0</span></span>
+    <span class="stat sunken">On wall: <span id="nWall">0</span></span>
+    <label><input type="checkbox" id="sound"> New-piece beep</label>
+  </div>
+</div>
+
+<p class="hint">Newest at the bottom &mdash; work from the top. Keys: <b>A</b> approve oldest &nbsp;&middot;&nbsp; <b>R</b> reject oldest.</p>
+
+<div class="window raised">
+  <div class="titlebar"><span>Waiting for approval</span><span class="sp"></span></div>
+  <div class="body">
+    <div id="queue"></div>
+    <div id="emptyq">Queue is clear &#9728; &mdash; new pieces appear here the moment someone hits Send.</div>
+  </div>
+</div>
+
+<div class="window raised">
+  <div class="titlebar"><span>On the wall &mdash; latest 24</span><span class="sp"></span></div>
+  <div class="body">
+    <div id="strip" class="sunken"></div>
+  </div>
+</div>
+
+<div id="shade">
+  <div class="dlg raised">
+    <div class="titlebar"><span id="dTitle">Wall Control logon</span><span class="sp"></span></div>
+    <div class="body">
+      <div class="msg"><span class="ic" id="dIcon">&#128273;</span><span id="dMsg">Enter the moderator password.</span></div>
+      <input type="password" id="pwIn" autocomplete="current-password">
+      <div class="row"><button class="btn" id="dOk"><b>OK</b></button></div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* ================================================================
+   Moderation screen. Works fine on a phone — you can run the wall
+   from beside the bar. Approve = it ignites on the projector.
+   ================================================================ */
+
+const queueEl = document.getElementById('queue');
+const emptyq  = document.getElementById('emptyq');
+const stripEl = document.getElementById('strip');
+const dot     = document.getElementById('dot');
+const nPend   = document.getElementById('nPending');
+const nWall   = document.getElementById('nWall');
+
+let socket = null;
+
+/* ---------------- password gate ---------------- */
+const shade = document.getElementById('shade');
+const pwIn  = document.getElementById('pwIn');
+const dMsg  = document.getElementById('dMsg');
+
+function askPassword(msg) {
+  dMsg.textContent = msg || 'Enter the moderator password.';
+  pwIn.value = '';
+  shade.classList.add('show');
+  setTimeout(() => pwIn.focus(), 50);
+}
+function submitPw() {
+  const pw = pwIn.value;
+  if (!pw) return;
+  shade.classList.remove('show');
+  sessionStorage.setItem('bsw_pw', pw);
+  connect(pw);
+}
+document.getElementById('dOk').addEventListener('click', submitPw);
+pwIn.addEventListener('keydown', e => { if (e.key === 'Enter') submitPw(); });
+
+/* ---------------- sound ---------------- */
+const soundBox = document.getElementById('sound');
+soundBox.checked = localStorage.getItem('bsw_sound') === '1';
+let audio = null;
+soundBox.addEventListener('change', () => {
+  localStorage.setItem('bsw_sound', soundBox.checked ? '1' : '0');
+  if (soundBox.checked) initAudio();
+});
+function initAudio() {
+  if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audio && audio.state === 'suspended') audio.resume().catch(() => {});
+}
+document.addEventListener('pointerdown', initAudio, { once: true });
+function beep() {
+  if (!soundBox.checked || !audio || audio.state !== 'running') return;
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.frequency.value = 880; o.type = 'square';
+  g.gain.setValueAtTime(0.0001, audio.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.12, audio.currentTime + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.09);
+  o.connect(g).connect(audio.destination);
+  o.start(); o.stop(audio.currentTime + 0.1);
+}
+
+/* ---------------- pending cards ---------------- */
+function ageText(ts) {
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  return s < 60 ? s + 's ago' : Math.floor(s / 60) + 'm ago';
+}
+setInterval(() => {
+  document.querySelectorAll('#queue .age').forEach(el => {
+    el.textContent = ageText(+el.dataset.ts);
+  });
+}, 5000);
+
+function addPendingCard(item) {
+  if (document.getElementById('p' + item.id)) return;
+  const card = document.createElement('div');
+  card.className = 'card raised';
+  card.id = 'p' + item.id;
+  card.innerHTML =
+    '<div class="pic sunken"><img alt=""></div>' +
+    '<div class="meta">' +
+      '<div class="nm"></div>' +
+      '<div class="age" data-ts="' + item.ts + '">' + ageText(item.ts) + '</div>' +
+      '<div class="acts">' +
+        '<button class="btn ok">&#10004; Approve</button>' +
+        '<button class="btn no">&#10008; Reject</button>' +
+      '</div>' +
+    '</div>';
+  card.querySelector('img').src = item.image;
+  card.querySelector('.nm').textContent = item.name;
+  card.querySelector('.ok').addEventListener('click', () => act(card, 'mod:approve', item.id));
+  card.querySelector('.no').addEventListener('click', () => act(card, 'mod:reject', item.id));
+  queueEl.appendChild(card);      // oldest stays at the top
+  emptyq.style.display = 'none';
+}
+
+function act(card, event, id) {
+  if (!socket) return;
+  card.querySelectorAll('button').forEach(b => b.disabled = true);
+  socket.emit(event, id);
+  setTimeout(() => {              // re-enable if the server never confirmed
+    const c = document.getElementById(card.id);
+    if (c) c.querySelectorAll('button').forEach(b => b.disabled = false);
+  }, 6000);
+}
+
+function removePendingCard(id) {
+  const c = document.getElementById('p' + id);
+  if (c) c.remove();
+  if (!queueEl.children.length) emptyq.style.display = 'block';
+}
+
+/* keyboard: A approve oldest, R reject oldest */
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  const first = queueEl.firstElementChild;
+  if (!first) return;
+  const k = e.key.toLowerCase();
+  if (k === 'a') first.querySelector('.ok').click();
+  if (k === 'r') first.querySelector('.no').click();
+});
+
+/* ---------------- approved strip ---------------- */
+function addThumb(tag, prepend) {
+  if (document.getElementById('a' + tag.id)) return;
+  const th = document.createElement('div');
+  th.className = 'thumb raised';
+  th.id = 'a' + tag.id;
+  th.innerHTML = '<img alt=""><div class="nm"></div><button class="btn">Remove</button>';
+  th.querySelector('img').src = tag.image;
+  th.querySelector('.nm').textContent = tag.name;
+  th.querySelector('button').addEventListener('click', () => {
+    if (confirm('Pull "' + tag.name + '" off the wall?')) socket && socket.emit('mod:remove', tag.id);
+  });
+  if (prepend && stripEl.firstChild) stripEl.insertBefore(th, stripEl.firstChild);
+  else stripEl.appendChild(th);
+  while (stripEl.children.length > 24) stripEl.removeChild(stripEl.lastChild);
+}
+function removeThumb(id) {
+  const t = document.getElementById('a' + id);
+  if (t) t.remove();
+}
+
+/* ---------------- socket ---------------- */
+function connect(pw) {
+  if (socket) { socket.removeAllListeners(); socket.disconnect(); }
+  socket = io({ auth: { role: 'mod', password: pw } });
+
+  socket.on('connect', () => {
+    dot.classList.add('ok');
+    queueEl.innerHTML = '';                 // server resends everything fresh
+    stripEl.innerHTML = '';
+    emptyq.style.display = 'block';
+  });
+  socket.on('disconnect', () => dot.classList.remove('ok'));
+
+  socket.on('mod:denied', () => {
+    sessionStorage.removeItem('bsw_pw');
+    dot.classList.remove('ok');
+    askPassword('Wrong password — try again.');
+  });
+
+  socket.on('counts', c => { nPend.textContent = c.pending; nWall.textContent = c.onWall; });
+
+  socket.on('mod:pendingBatch', items => items.forEach(addPendingCard));
+  socket.on('mod:pendingDone', () => {});
+  socket.on('pending:new', item => { addPendingCard(item); beep(); });
+  socket.on('pending:remove', removePendingCard);
+
+  socket.on('mod:approvedBatch', items => items.forEach(t => addThumb(t, true)));
+  socket.on('approved:add', t => addThumb(t, true));
+  socket.on('approved:remove', removeThumb);
+}
+
+/* ---------------- boot ---------------- */
+const saved = sessionStorage.getItem('bsw_pw');
+if (saved) connect(saved);
+else askPassword();
+</script>
+</body>
+</html>

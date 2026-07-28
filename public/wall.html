@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WALL.bmp — bigsun Paint</title>
+<style>
+/* ============================================================
+   BIG SUN WALL — projector display
+   A giant Windows 95 Paint window. The mural lives inside the
+   canvas area, which stays dark: a projector paints with light,
+   so a dark canvas is what makes the tags read as neon on brick.
+
+   Colour schemes are real Win95 Appearance schemes (Display
+   Properties > Appearance), tuned by eye for projection:
+     scheme-standard  Windows Standard  (the classic grey)
+     scheme-eggplant  Eggplant          (dark aubergine)
+     scheme-black     High Contrast Black
+   Press S on the night to cycle them.
+   ============================================================ */
+
+/* ---------- scheme: Windows Standard ---------- */
+.scheme-standard {
+  --desktop:  #008080;
+  --face:     #c0c0c0;
+  --light:    #ffffff;
+  --hilite:   #dfdfdf;
+  --shadow:   #808080;
+  --dark:     #000000;
+  --text:     #000000;
+  --title-a:  #000080;
+  --title-b:  #1084d0;
+  --titletxt: #ffffff;
+  --well:     #c0c0c0;
+}
+
+/* ---------- scheme: Eggplant ---------- */
+.scheme-eggplant {
+  --desktop:  #2c2333;
+  --face:     #55465c;
+  --light:    #907c99;
+  --hilite:   #6d5c76;
+  --shadow:   #382c3e;
+  --dark:     #150f19;
+  --text:     #f2ecf5;
+  --title-a:  #2f4f3f;   /* Eggplant's odd green-into-plum title bar */
+  --title-b:  #6b4a6b;
+  --titletxt: #ffffff;
+  --well:     #4a3d51;
+}
+
+/* ---------- scheme: High Contrast Black ---------- */
+.scheme-black {
+  --desktop:  #000000;
+  --face:     #0a0a0a;
+  --light:    #ffffff;
+  --hilite:   #9a9a9a;
+  --shadow:   #6a6a6a;
+  --dark:     #ffffff;
+  --text:     #ffffff;
+  --title-a:  #000080;
+  --title-b:  #0030c0;
+  --titletxt: #ffffff;
+  --well:     #000000;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+
+body {
+  background: var(--desktop);
+  color: var(--text);
+  font-family: Tahoma, "MS Sans Serif", Geneva, sans-serif;
+  /* everything scales off this, so the chrome reads from across the park */
+  font-size: clamp(12px, 2.05vh, 30px);
+  display: flex; flex-direction: column;
+  padding: 0.55em 0.55em 0;
+  user-select: none;
+}
+body.nocursor { cursor: none; }
+
+/* ---------- Win95 bevels (em-based, so they stay chunky when projected) ---------- */
+.raised {
+  box-shadow: inset -0.09em -0.09em 0 var(--dark), inset 0.09em 0.09em 0 var(--light),
+              inset -0.18em -0.18em 0 var(--shadow), inset 0.18em 0.18em 0 var(--hilite);
+}
+.sunken {
+  box-shadow: inset 0.09em 0.09em 0 var(--dark), inset -0.09em -0.09em 0 var(--light),
+              inset 0.18em 0.18em 0 var(--shadow), inset -0.18em -0.18em 0 var(--hilite);
+}
+.btnface {
+  box-shadow: inset -0.07em -0.07em 0 var(--dark), inset 0.07em 0.07em 0 var(--light),
+              inset -0.14em -0.14em 0 var(--shadow), inset 0.14em 0.14em 0 var(--hilite);
+}
+
+/* ---------- the giant Paint window ---------- */
+.window {
+  background: var(--face); padding: 0.22em;
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+
+.titlebar {
+  background: linear-gradient(90deg, var(--title-a), var(--title-b));
+  color: var(--titletxt); font-weight: bold;
+  padding: 0.18em 0.3em;
+  display: flex; align-items: center; gap: 0.4em;
+  letter-spacing: 0.02em;
+}
+.titlebar .sp { flex: 1; }
+
+.tbtn {
+  background: var(--face); color: var(--text); font-weight: bold;
+  width: 1.25em; height: 1.1em; line-height: 1.05em; text-align: center;
+  font-size: 0.9em; font-family: "Courier New", monospace;
+  box-shadow: inset -0.07em -0.07em 0 var(--dark), inset 0.07em 0.07em 0 var(--light),
+              inset -0.14em -0.14em 0 var(--shadow), inset 0.14em 0.14em 0 var(--hilite);
+}
+
+.menubar { display: flex; gap: 0.15em; padding: 0.14em 0.2em; font-size: 0.92em; }
+.menubar span { padding: 0.1em 0.5em; }
+.menubar u { text-decoration: underline; }
+
+.mid { flex: 1; min-height: 0; display: flex; gap: 0.25em; padding: 0.1em 0.2em 0.2em; }
+
+/* ---------- toolbox (decorative — the spray can is selected) ---------- */
+.toolbox {
+  flex: 0 0 auto; width: 3.6em; padding: 0.22em;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.14em;
+  align-content: start;
+}
+.tool {
+  aspect-ratio: 1; background: var(--face); color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset -0.07em -0.07em 0 var(--dark), inset 0.07em 0.07em 0 var(--light),
+              inset -0.14em -0.14em 0 var(--shadow), inset 0.14em 0.14em 0 var(--hilite);
+}
+.tool.pressed {
+  box-shadow: inset 0.07em 0.07em 0 var(--dark), inset -0.07em -0.07em 0 var(--light),
+              inset 0.14em 0.14em 0 var(--shadow);
+}
+.tool svg { width: 68%; height: 68%; }
+
+/* ---------- the mural ---------- */
+.paintstage {
+  position: relative; flex: 1; min-width: 0;
+  background: #000; overflow: hidden;
+  box-shadow: inset 0.09em 0.09em 0 var(--shadow), inset -0.09em -0.09em 0 var(--light),
+              inset 0.18em 0.18em 0 #000;
+}
+canvas#wall { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------- palette (decorative) ---------- */
+.palrow { display: flex; align-items: center; gap: 0.5em; padding: 0.18em 0.3em; }
+.fgbg { position: relative; width: 2.1em; height: 2.1em; flex: 0 0 auto; }
+.fgbg .sw {
+  position: absolute; width: 1.25em; height: 1.25em;
+  box-shadow: inset 0.07em 0.07em 0 var(--shadow), inset -0.07em -0.07em 0 var(--light);
+}
+.fgbg .bg { right: 0; bottom: 0; background: #101014; }
+.fgbg .fg { left: 0; top: 0; background: #FFD400; z-index: 1; }
+.swatches { display: grid; grid-template-rows: 1fr 1fr; grid-auto-flow: column; gap: 0.1em; }
+.swatches i {
+  display: block; width: 1.35em; height: 0.95em;
+  box-shadow: inset 0.07em 0.07em 0 var(--shadow), inset -0.07em -0.07em 0 var(--light);
+}
+
+/* ---------- status bar ---------- */
+.statusbar { display: flex; gap: 0.2em; padding: 0.1em 0.2em 0.2em; font-size: 0.88em; }
+.statusbar .cell {
+  background: var(--well); padding: 0.14em 0.55em; white-space: nowrap;
+  box-shadow: inset 0.07em 0.07em 0 var(--shadow), inset -0.07em -0.07em 0 var(--light);
+}
+.statusbar .grow { flex: 1; }
+#dot { color: #d00; }
+#dot.ok { color: #0a0; }
+
+/* ---------- taskbar ---------- */
+.taskbar {
+  flex: 0 0 auto; background: var(--face);
+  margin: 0.3em -0.55em 0; padding: 0.18em 0.3em;
+  display: flex; align-items: center; gap: 0.35em;
+  box-shadow: inset 0 0.09em 0 var(--light), inset 0 0.18em 0 var(--hilite);
+}
+.startbtn {
+  display: flex; align-items: center; gap: 0.3em; font-weight: bold;
+  padding: 0.12em 0.5em 0.12em 0.3em; background: var(--face);
+}
+.startbtn svg { width: 1.1em; height: 1.1em; }
+.task {
+  flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: var(--well); padding: 0.12em 0.6em; font-weight: bold;
+  box-shadow: inset 0.07em 0.07em 0 var(--dark), inset -0.07em -0.07em 0 var(--light),
+              inset 0.14em 0.14em 0 var(--shadow);
+}
+.taskbar .sp { flex: 1; }
+#tbclock {
+  background: var(--well); padding: 0.12em 0.7em;
+  box-shadow: inset 0.07em 0.07em 0 var(--shadow), inset -0.07em -0.07em 0 var(--light);
+}
+
+/* ---------- things floating on the mural ---------- */
+#neonTitle {
+  position: absolute; top: 4%; left: 3%; z-index: 5;
+  color: #FFD400; font-weight: bold; letter-spacing: .35em;
+  font-family: "Courier New", monospace;
+  font-size: clamp(16px, 2.4vw, 34px);
+  text-shadow: 0 0 8px rgba(255,212,0,.9), 0 0 26px rgba(255,150,0,.55), 0 0 60px rgba(255,80,0,.3);
+  pointer-events: none;
+}
+
+/* the QR as a little Win95 dialog. Its inner panel stays white in every
+   scheme — a QR needs light quiet zones to scan reliably. */
+#qrPanel {
+  position: absolute; right: 1.6%; bottom: 2.4%; z-index: 5;
+  background: var(--face); padding: 0.18em;
+  box-shadow: inset -0.09em -0.09em 0 var(--dark), inset 0.09em 0.09em 0 var(--light),
+              inset -0.18em -0.18em 0 var(--shadow), inset 0.18em 0.18em 0 var(--hilite),
+              0 0 34px rgba(255,212,0,.5), 0 0 90px rgba(255,120,0,.25);
+}
+#qrPanel .titlebar { font-size: 0.85em; }
+#qrPanel .qbody { background: #fff; color: #000; text-align: center; padding: 0.55em 0.6em 0.5em; margin-top: 0.14em; }
+#qrPanel img { display: block; width: min(17vw, 19vh, 200px); height: auto; image-rendering: pixelated; margin: 0 auto; }
+#qrPanel .cap { font-weight: bold; font-size: clamp(10px, 1.05vw, 16px); letter-spacing: .1em; margin-top: 0.45em; }
+#qrPanel .url { font-size: clamp(8px, .75vw, 12px); color: #333; margin-top: 0.15em; word-break: break-all; }
+
+#empty {
+  position: absolute; inset: 0; z-index: 4;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,212,0,.5); font-size: clamp(15px, 1.9vw, 26px);
+  font-family: "Courier New", monospace;
+  letter-spacing: .2em; text-align: center; pointer-events: none;
+  text-shadow: 0 0 18px rgba(255,180,0,.35);
+}
+
+/* ---------- help dialog ---------- */
+#help {
+  position: fixed; inset: 0; z-index: 20; display: none;
+  background: rgba(0,0,0,.4);
+  align-items: center; justify-content: center;
+}
+#help.show { display: flex; }
+#help .dlg { background: var(--face); padding: 0.22em; min-width: 24em; }
+#help .dbody { padding: 0.7em 1em 0.9em; font-size: 0.95em; }
+#help table { border-collapse: collapse; }
+#help td { padding: 0.16em 0.9em 0.16em 0; }
+#help td.k { font-weight: bold; font-family: "Courier New", monospace; }
+
+.hidden { display: none !important; }
+
+/* ---------- W key: strip the chrome, pure neon wall ---------- */
+body.bare { padding: 0; background: #000; }
+body.bare .window { background: transparent; padding: 0; box-shadow: none; }
+body.bare .titlebar, body.bare .menubar, body.bare .toolbox,
+body.bare .palrow, body.bare .statusbar, body.bare .taskbar { display: none; }
+body.bare .mid { padding: 0; gap: 0; }
+body.bare .paintstage { box-shadow: none; }
+</style>
+</head>
+<body class="scheme-eggplant">
+
+<div class="window raised">
+  <div class="titlebar">
+    <span>&#127774; WALL.bmp &mdash; bigsun Paint</span>
+    <span class="sp"></span>
+    <span class="tbtn">_</span><span class="tbtn">&#9633;</span><span class="tbtn">&#10005;</span>
+  </div>
+
+  <div class="menubar">
+    <span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span>
+    <span><u>I</u>mage</span><span><u>C</u>olors</span><span><u>H</u>elp</span>
+  </div>
+
+  <div class="mid">
+    <div class="toolbox raised">
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2"><rect x="4" y="5" width="16" height="14"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19l1-4L16 5l3 3L9 18l-4 1z"/></svg></div>
+      <div class="tool pressed"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="10" y="3" width="4" height="3"/><path d="M9 7h6l2 5H7z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7" cy="16" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="17" cy="16" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4l6 6-7 7-6-6z"/><path d="M7 11l-3 7 8-3" fill="currentColor"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10" width="10" height="7" transform="rotate(-20 10 13)"/><path d="M13 8l5 5"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4c3 4 6 7 6 10a6 6 0 11-12 0c0-3 3-6 6-10z"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="5" y1="19" x2="19" y2="5"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="5"/><line x1="14" y1="14" x2="20" y2="20"/></svg></div>
+    </div>
+
+    <div class="paintstage">
+      <canvas id="wall"></canvas>
+      <div id="neonTitle">BIG SUN WALL</div>
+      <div id="empty">scan the code &rarr; your tag ignites here</div>
+
+      <div id="qrPanel">
+        <div class="titlebar"><span>&#127774; Paint the Wall</span><span class="sp"></span><span class="tbtn">&#10005;</span></div>
+        <div class="qbody">
+          <img id="qrImg" src="/qr.png?size=420" alt="QR code">
+          <div class="cap">SCAN &rarr; PAINT THE WALL</div>
+          <div class="url" id="qrUrl"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="palrow">
+    <div class="fgbg"><span class="sw bg"></span><span class="sw fg"></span></div>
+    <div class="swatches" id="swatches"></div>
+  </div>
+
+  <div class="statusbar">
+    <span class="cell grow">For Help, press K</span>
+    <span class="cell" id="schemeCell">Eggplant</span>
+    <span class="cell"><span id="dot">&#11044;</span> <span id="liveTxt">connecting&hellip;</span></span>
+    <span class="cell" id="countCell">0 pieces</span>
+  </div>
+</div>
+
+<div class="taskbar">
+  <div class="startbtn btnface">
+    <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#f00"/><rect x="9" y="1" width="6" height="6" fill="#0a0"/><rect x="1" y="9" width="6" height="6" fill="#00e"/><rect x="9" y="9" width="6" height="6" fill="#fd0"/></svg>
+    Start
+  </div>
+  <div class="task">&#127774; WALL.bmp &mdash; bigsun Paint</div>
+  <span class="sp"></span>
+  <div id="tbclock">--:--</div>
+</div>
+
+<div id="help">
+  <div class="dlg raised">
+    <div class="titlebar"><span>Help Topics: bigsun Paint</span><span class="sp"></span><span class="tbtn">&#10005;</span></div>
+    <div class="dbody">
+      <table>
+        <tr><td class="k">F</td><td>fullscreen on / off</td></tr>
+        <tr><td class="k">S</td><td>colour scheme: Eggplant / Standard / High Contrast Black</td></tr>
+        <tr><td class="k">W</td><td>Windows chrome on / off (pure neon wall)</td></tr>
+        <tr><td class="k">Q</td><td>show / hide QR dialog</td></tr>
+        <tr><td class="k">T</td><td>show / hide neon title</td></tr>
+        <tr><td class="k">I</td><td>show / hide status bar</td></tr>
+        <tr><td class="k">G</td><td>glow: full / soft / off</td></tr>
+        <tr><td class="k">B</td><td>brick preview (for testing at home)</td></tr>
+        <tr><td class="k">K</td><td>this help</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* ================================================================
+   BIG SUN WALL — projector display
+
+   Rendering: settled pieces are baked into an offscreen canvas and
+   a cached glow layer, so each frame is only a couple of drawImage
+   calls. New pieces animate live on top until they settle.
+
+   Resilience: the whole mural is mirrored in IndexedDB, so a
+   refresh, a crash, or a server restart never loses the wall.
+   ================================================================ */
+
+/* ---------------- canvases ---------------- */
+const stage  = document.querySelector('.paintstage');
+const canvas = document.getElementById('wall');
+const ctx    = canvas.getContext('2d');
+
+const baked = document.createElement('canvas');   // settled mural, crisp
+const bctx  = baked.getContext('2d');
+const glowC = document.createElement('canvas');   // cached glow of the mural
+const gctx  = glowC.getContext('2d');
+const brick = document.createElement('canvas');   // fake wall for home testing
+const brctx = brick.getContext('2d');
+const small = document.createElement('canvas');   // low-res buffer (glow fallback)
+const sctx  = small.getContext('2d');
+
+const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+let W = 0, H = 0;
+
+const supportsFilter = (() => {
+  try {
+    const c = document.createElement('canvas').getContext('2d');
+    c.filter = 'blur(2px)';
+    return c.filter === 'blur(2px)';
+  } catch (e) { return false; }
+})();
+
+/* ---------------- state ---------------- */
+const tags     = new Map();   // id -> { ...tag, img, loaded }
+const igniting = new Map();   // id -> { start, seed }
+
+let glowLevel = 2;            // 2 full, 1 soft, 0 off
+let brickOn   = false;
+let glowDirty = true;
+
+const AGE_FULL_MS  = 22 * 60 * 1000;   // full brightness for this long
+const AGE_FLOOR_MS = 95 * 60 * 1000;   // fully dimmed by here
+const AGE_FLOOR    = 0.4;              // old tags never fade below this
+
+function ageAlpha(t, now) {
+  const age = now - (t.approvedAt || t.ts || now);
+  if (age <= AGE_FULL_MS)  return 1;
+  if (age >= AGE_FLOOR_MS) return AGE_FLOOR;
+  const k = (age - AGE_FULL_MS) / (AGE_FLOOR_MS - AGE_FULL_MS);
+  return 1 - k * (1 - AGE_FLOOR);
+}
+
+/* ---------------- colour schemes ---------------- */
+const SCHEMES = [
+  { cls: 'scheme-eggplant', label: 'Eggplant' },
+  { cls: 'scheme-standard', label: 'Windows Standard' },
+  { cls: 'scheme-black',    label: 'High Contrast Black' }
+];
+let schemeIx = 0;
+
+function applyScheme(ix, remember) {
+  schemeIx = ((ix % SCHEMES.length) + SCHEMES.length) % SCHEMES.length;
+  SCHEMES.forEach(s => document.body.classList.remove(s.cls));
+  document.body.classList.add(SCHEMES[schemeIx].cls);
+  document.getElementById('schemeCell').textContent = SCHEMES[schemeIx].label;
+  if (remember) { try { localStorage.setItem('bsw_scheme', String(schemeIx)); } catch (e) {} }
+}
+
+/* ---------------- drawing one tag ---------------- */
+function drawTag(g, t, alpha, scaleMul) {
+  if (!t.loaded) return;
+  const w = t.scale * W * (scaleMul || 1);
+  const h = w * (t.aspect || 1);
+
+  g.save();
+  g.translate(t.x * W, t.y * H);
+  g.rotate((t.rot || 0) * Math.PI / 180);
+  g.globalCompositeOperation = 'screen';   // light on brick — dark pixels vanish
+  g.globalAlpha = alpha;
+  g.drawImage(t.img, -w / 2, -h / 2, w, h);
+
+  // the signature, glowing under the piece
+  const fs = Math.max(10, w * 0.085);
+  g.font = 'bold ' + fs + 'px "Courier New", monospace';
+  g.textAlign = 'center';
+  g.textBaseline = 'top';
+  g.shadowColor = 'rgba(255,214,64,.9)';
+  g.shadowBlur = fs * 0.8;
+  g.fillStyle = 'rgba(255,246,214,' + (alpha * 0.9).toFixed(3) + ')';
+  g.fillText((t.name || 'ANON').toUpperCase(), 0, h / 2 + fs * 0.25);
+  g.restore();
+}
+
+/* ---------------- baking ---------------- */
+function orderedTags() {
+  return Array.from(tags.values())
+    .sort((a, b) => (a.approvedAt || a.id) - (b.approvedAt || b.id));
+}
+
+function bakeAll() {
+  bctx.clearRect(0, 0, W, H);
+  const now = Date.now();
+  for (const t of orderedTags()) {
+    if (igniting.has(t.id)) continue;      // still animating — drawn live
+    drawTag(bctx, t, ageAlpha(t, now), 1);
+  }
+  glowDirty = true;
+  updateChrome();
+}
+
+function bakeOne(t) {
+  drawTag(bctx, t, ageAlpha(t, Date.now()), 1);
+  glowDirty = true;
+}
+
+let bakeTimer = null;
+function scheduleBake() {                  // debounced: image loads arrive in bursts
+  clearTimeout(bakeTimer);
+  bakeTimer = setTimeout(bakeAll, 180);
+}
+
+/* ---------------- glow layer ---------------- */
+function buildGlow() {
+  glowDirty = false;
+  gctx.setTransform(1, 0, 0, 1, 0, 0);
+  gctx.clearRect(0, 0, W, H);
+  if (glowLevel === 0) return;
+
+  gctx.globalCompositeOperation = 'lighter';
+  if (supportsFilter) {
+    gctx.filter = 'blur(18px)';
+    gctx.globalAlpha = glowLevel === 2 ? 0.55 : 0.35;
+    gctx.drawImage(baked, 0, 0);
+    if (glowLevel === 2) {
+      gctx.filter = 'blur(5px)';
+      gctx.globalAlpha = 0.8;
+      gctx.drawImage(baked, 0, 0);
+    }
+    gctx.filter = 'none';
+  } else {
+    // fallback: downscale then smooth upscale = a cheap blur
+    sctx.clearRect(0, 0, small.width, small.height);
+    sctx.drawImage(baked, 0, 0, small.width, small.height);
+    gctx.imageSmoothingEnabled = true;
+    gctx.globalAlpha = glowLevel === 2 ? 0.6 : 0.4;
+    gctx.drawImage(small, 0, 0, W, H);
+  }
+  gctx.globalAlpha = 1;
+  gctx.globalCompositeOperation = 'source-over';
+}
+
+/* ---------------- brick preview (testing only) ---------------- */
+function buildBrick() {
+  brctx.setTransform(1, 0, 0, 1, 0, 0);
+  brctx.fillStyle = '#16141b';
+  brctx.fillRect(0, 0, W, H);
+
+  const bh = Math.max(8, Math.round(H / 14));
+  const bw = Math.max(12, Math.round(W / 9));
+  for (let row = 0; row * bh < H; row++) {
+    const off = row % 2 ? bw / 2 : 0;
+    for (let col = -1; col * bw < W + bw; col++) {
+      const x = col * bw + off;
+      const tint = 22 + Math.floor(Math.random() * 14);
+      brctx.fillStyle = 'rgb(' + (tint + 14) + ',' + (tint + 6) + ',' + (tint + 18) + ')';
+      brctx.fillRect(x + 2, row * bh + 2, bw - 4, bh - 4);
+    }
+  }
+  const vg = brctx.createRadialGradient(W / 2, H * 0.9, H * 0.1, W / 2, H * 0.9, H * 1.1);
+  vg.addColorStop(0, 'rgba(255,140,40,.10)');
+  vg.addColorStop(1, 'rgba(0,0,0,.45)');
+  brctx.fillStyle = vg;
+  brctx.fillRect(0, 0, W, H);
+}
+
+/* ---------------- frame loop ---------------- */
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function frame() {
+  requestAnimationFrame(frame);
+  if (!W || !H) return;
+  if (glowDirty) buildGlow();
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (brickOn) ctx.drawImage(brick, 0, 0);
+  else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+
+  if (glowLevel > 0) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.drawImage(glowC, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  ctx.drawImage(baked, 0, 0);
+
+  if (!igniting.size) return;
+
+  // new arrivals: a neon tube striking, then settling
+  const now = performance.now();
+  for (const [id, an] of igniting) {
+    const t = tags.get(id);
+    if (!t || !t.loaded) continue;
+
+    const p = (now - an.start) / 1150;
+    if (p >= 1) { igniting.delete(id); bakeOne(t); continue; }
+
+    let gate = 1;
+    if (p < 0.5) {
+      const wave = Math.sin(p * 90 + an.seed) * 0.5 + 0.5;
+      gate = wave > (0.72 - p) ? 1 : 0.08;
+    }
+    const s = 1 + 0.08 * (1 - easeOutCubic(Math.min(p / 0.6, 1)));
+    drawTag(ctx, t, gate, s);
+
+    if (p < 0.3) {                          // hot additive kick on strike
+      ctx.globalCompositeOperation = 'lighter';
+      drawTag(ctx, t, gate * 0.6 * (1 - p / 0.3), s);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+}
+
+/* ---------------- IndexedDB cache ---------------- */
+let db = null;
+
+function openDB() {
+  return new Promise(resolve => {
+    try {
+      const rq = indexedDB.open('bigsun-wall', 1);
+      rq.onupgradeneeded = () => rq.result.createObjectStore('tags', { keyPath: 'id' });
+      rq.onsuccess = () => resolve(rq.result);
+      rq.onerror   = () => resolve(null);
+    } catch (e) { resolve(null); }
+  });
+}
+
+function cachePut(t) {
+  if (!db) return;
+  try {
+    const { id, name, image, x, y, rot, scale, aspect, approvedAt, ts } = t;
+    db.transaction('tags', 'readwrite').objectStore('tags')
+      .put({ id, name, image, x, y, rot, scale, aspect, approvedAt, ts });
+  } catch (e) {}
+}
+
+function cacheDel(id) {
+  if (!db) return;
+  try { db.transaction('tags', 'readwrite').objectStore('tags').delete(id); } catch (e) {}
+}
+
+function cacheLoad() {
+  return new Promise(resolve => {
+    if (!db) return resolve([]);
+    try {
+      const rq = db.transaction('tags').objectStore('tags').getAll();
+      rq.onsuccess = () => resolve(rq.result || []);
+      rq.onerror   = () => resolve([]);
+    } catch (e) { resolve([]); }
+  });
+}
+
+/* ---------------- tag management ---------------- */
+function addTag(raw, ignite) {
+  if (!raw || tags.has(raw.id)) return;    // merge, never duplicate
+  const t = { ...raw, loaded: false, img: new Image() };
+
+  t.img.onload = () => {
+    t.loaded = true;
+    if (ignite) igniting.set(t.id, { start: performance.now(), seed: Math.random() * 40 });
+    else scheduleBake();
+    updateChrome();
+  };
+  t.img.onerror = () => { tags.delete(t.id); };
+  t.img.src = t.image;
+
+  tags.set(t.id, t);
+  cachePut(t);
+}
+
+function removeTag(id) {
+  if (!tags.has(id)) return;
+  tags.delete(id);
+  igniting.delete(id);
+  cacheDel(id);
+  bakeAll();
+}
+
+/* ---------------- status bar ---------------- */
+const dot       = document.getElementById('dot');
+const liveTxt   = document.getElementById('liveTxt');
+const countCell = document.getElementById('countCell');
+const emptyEl   = document.getElementById('empty');
+let connected = false;
+
+function updateChrome() {
+  liveTxt.textContent = connected ? 'live' : 'reconnecting…';
+  dot.classList.toggle('ok', connected);
+  countCell.textContent = tags.size + (tags.size === 1 ? ' piece' : ' pieces');
+  emptyEl.style.display = tags.size ? 'none' : 'flex';
+}
+
+function tickClock() {
+  const d = new Date();
+  let h = d.getHours();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('tbclock').textContent =
+    h + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + ap;
+}
+
+/* decorative palette: bright row over dim row, like Paint's */
+(function buildSwatches() {
+  const cols = ['#FFD400','#FF9500','#FF3D00','#FF2E88','#B44BFF','#00E5FF','#38FF9C','#FFFFFF',
+                '#8a7200','#8a5200','#8a2100','#8a1949','#5e278a','#007b8a','#1d8a55','#9a9a9a'];
+  const holder = document.getElementById('swatches');
+  for (let i = 0; i < 8; i++) {
+    const a = document.createElement('i'); a.style.background = cols[i];
+    const b = document.createElement('i'); b.style.background = cols[i + 8];
+    holder.appendChild(a);
+    holder.appendChild(b);
+  }
+})();
+
+/* ---------------- socket ---------------- */
+const socket = io({ auth: { role: 'wall' } });
+
+socket.on('connect',     () => { connected = true;  updateChrome(); });
+socket.on('disconnect',  () => { connected = false; updateChrome(); });
+socket.on('wall:meta',   () => {});
+socket.on('wall:batch',  items => items.forEach(t => addTag(t, false)));
+socket.on('wall:done',   () => scheduleBake());
+socket.on('wall:add',    t  => addTag(t, true));
+socket.on('wall:remove', id => removeTag(id));
+
+/* ---------------- layout ----------------
+   The canvas fills the Paint window's canvas area, so it's sized from
+   that element — and re-measured whenever it moves (resize, fullscreen,
+   or the W and S toggles). */
+function resize() {
+  const r = stage.getBoundingClientRect();
+  const w = Math.max(2, Math.round(r.width  * DPR));
+  const h = Math.max(2, Math.round(r.height * DPR));
+  if (w === W && h === H) return;
+
+  W = w; H = h;
+  for (const c of [canvas, baked, glowC, brick]) { c.width = W; c.height = H; }
+  small.width  = Math.max(2, Math.round(W / 6));
+  small.height = Math.max(2, Math.round(H / 6));
+
+  buildBrick();
+  bakeAll();
+}
+
+addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+
+/* ---------------- keys ---------------- */
+addEventListener('keydown', e => {
+  switch (e.key.toLowerCase()) {
+    case 'f':
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+      break;
+    case 's': applyScheme(schemeIx + 1, true); setTimeout(resize, 50); break;
+    case 'w': document.body.classList.toggle('bare'); setTimeout(resize, 50); break;
+    case 'q': document.getElementById('qrPanel').classList.toggle('hidden'); break;
+    case 't': document.getElementById('neonTitle').classList.toggle('hidden'); break;
+    case 'i': document.querySelector('.statusbar').classList.toggle('hidden'); break;
+    case 'b': brickOn = !brickOn; break;
+    case 'g': glowLevel = (glowLevel + 2) % 3; glowDirty = true; break;
+    case 'k': document.getElementById('help').classList.toggle('show'); break;
+  }
+});
+
+/* ---------------- cursor auto-hide ---------------- */
+let cursorTimer = null;
+addEventListener('mousemove', () => {
+  document.body.classList.remove('nocursor');
+  clearTimeout(cursorTimer);
+  cursorTimer = setTimeout(() => document.body.classList.add('nocursor'), 3000);
+});
+
+/* ---------------- timers ---------------- */
+setInterval(tickClock, 20000);                              // taskbar clock
+setInterval(bakeAll, 45000);                                // age dimming
+setInterval(() => { fetch('/healthz').catch(() => {}); }, 240000);  // keep server awake
+
+/* ---------------- boot ---------------- */
+fetch('/url')
+  .then(r => r.text())
+  .then(u => { document.getElementById('qrUrl').textContent = u.replace(/^https?:\/\//, ''); })
+  .catch(() => {});
+
+(async () => {
+  let saved = 0;
+  try { saved = parseInt(localStorage.getItem('bsw_scheme'), 10) || 0; } catch (e) {}
+  applyScheme(saved, false);
+
+  tickClock();
+  db = await openDB();
+  const cached = await cacheLoad();
+  cached.forEach(t => addTag(t, false));   // instant restore after a refresh
+  resize();
+  frame();
+})();
+</script>
+</body>
+</html>

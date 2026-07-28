@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bigsun — Print the QR</title>
+<style>
+  :root { --gray: #c0c0c0; --dgray: #808080; --lgray: #dfdfdf; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: #008080;
+    font-family: Tahoma, "MS Sans Serif", Geneva, sans-serif; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .raised { box-shadow: inset -1px -1px 0 #000, inset 1px 1px 0 #fff, inset -2px -2px 0 var(--dgray), inset 2px 2px 0 var(--lgray); }
+  .window { background: var(--gray); padding: 3px; width: min(94vw, 560px); }
+  .titlebar {
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: #fff; font-weight: bold; padding: 4px 6px;
+  }
+  .body { padding: 16px; text-align: center; }
+  .qrbox { background: #fff; display: inline-block; padding: 14px; }
+  .qrbox img { display: block; width: min(70vw, 380px); height: auto; }
+  .cap { font-size: 20px; font-weight: bold; letter-spacing: .1em; margin: 14px 0 4px; }
+  .url { color: #333; word-break: break-all; margin-bottom: 14px; }
+  .btn {
+    background: var(--gray); border: 0; font: inherit; cursor: pointer;
+    padding: 8px 22px; min-height: 38px; font-weight: bold;
+    box-shadow: inset -1px -1px 0 #000, inset 1px 1px 0 #fff, inset -2px -2px 0 var(--dgray), inset 2px 2px 0 var(--lgray);
+  }
+  .btn:active { box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #fff, inset 2px 2px 0 var(--dgray); }
+  .note { margin-top: 14px; color: #222; text-align: left; background: #ffffcc; padding: 10px; border: 1px solid #999; }
+
+  /* ---- print layout: one clean poster sheet ---- */
+  #sheet { display: none; }
+  @media print {
+    body { background: #fff; display: block; padding: 0; }
+    .window { display: none; }
+    #sheet { display: block; text-align: center; padding-top: 8vh; }
+    #sheet img { width: 62vw; max-width: 15cm; }
+    #sheet .cap { font-size: 34pt; font-weight: bold; letter-spacing: .08em; margin: 24pt 0 8pt; font-family: "Courier New", monospace; }
+    #sheet .url { font-size: 14pt; color: #000; }
+  }
+</style>
+</head>
+<body>
+
+<div class="window raised">
+  <div class="titlebar">&#127774; bigsun &mdash; Print the QR</div>
+  <div class="body">
+    <div class="qrbox raised"><img src="/qr.png?size=1000" alt="QR code"></div>
+    <div class="cap">SCAN &rarr; PAINT THE WALL</div>
+    <div class="url" id="url"></div>
+    <button class="btn" onclick="window.print()">&#128424; Print&hellip;</button>
+    <div class="note">
+      <b>Tip:</b> print 3&ndash;4 copies &mdash; tape one to the bar, one to the queue rail,
+      one near the wall. The QR also shows in the corner of the projection itself,
+      but paper works when people are standing side-on to the wall.
+    </div>
+  </div>
+</div>
+
+<!-- what actually comes out of the printer -->
+<div id="sheet">
+  <img src="/qr.png?size=1000" alt="QR code">
+  <div class="cap">SCAN &rarr; PAINT THE WALL</div>
+  <div class="url" id="url2"></div>
+</div>
+
+<script>
+fetch('/url').then(r => r.text()).then(u => {
+  const t = u.replace(/^https?:\/\//, '');
+  document.getElementById('url').textContent = t;
+  document.getElementById('url2').textContent = t;
+}).catch(() => {});
+</script>
+</body>
+</html>

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#008080">
+<title>bigsun — Paint</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌞</text></svg>">
+<style>
+  :root{
+    --face:#c0c0c0; --hi:#ffffff; --lite:#dfdfdf; --sh:#808080; --dk:#404040;
+    --navy1:#000080; --navy2:#1084d0; --teal:#008080;
+    --sun:#FFD400;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; overflow:hidden; }
+  body{
+    font-family:Tahoma,"MS Sans Serif","Segoe UI",Verdana,sans-serif;
+    font-size:12px; background:var(--teal); color:#000;
+    position:fixed; inset:0; width:100%;
+    height:100vh; height:100dvh;
+    display:flex; flex-direction:column;
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    touch-action:none;
+  }
+
+  /* ---------- Win95 chrome ---------- */
+  .raised{
+    background:var(--face);
+    box-shadow: inset -1px -1px 0 var(--dk), inset 1px 1px 0 var(--hi),
+                inset -2px -2px 0 var(--sh), inset 2px 2px 0 var(--lite);
+  }
+  .sunken{
+    background:#fff;
+    box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi),
+                inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--lite);
+  }
+  .btn{
+    background:var(--face); border:0; font:inherit; color:#000; cursor:pointer;
+    box-shadow: inset -1px -1px 0 var(--dk), inset 1px 1px 0 var(--hi),
+                inset -2px -2px 0 var(--sh), inset 2px 2px 0 var(--lite);
+    padding:4px 10px; min-height:30px;
+  }
+  .btn:active,.btn.on{
+    box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi),
+                inset 2px 2px 0 var(--sh);
+  }
+  .btn:disabled{ color:var(--sh); text-shadow:1px 1px 0 var(--hi); cursor:default; }
+
+  /* ---------- window ---------- */
+  #desktop{ flex:1; display:flex; padding:6px 6px 2px; min-height:0; }
+  .win{
+    flex:1; display:flex; flex-direction:column; min-height:0;
+    background:var(--face); padding:3px;
+    box-shadow: inset -1px -1px 0 var(--dk), inset 1px 1px 0 var(--lite),
+                inset -2px -2px 0 var(--sh), inset 2px 2px 0 var(--hi);
+  }
+  .tbar{
+    display:flex; align-items:center; gap:6px; height:26px; padding:0 3px 0 6px;
+    background:linear-gradient(90deg,var(--navy1),var(--navy2));
+    color:#fff; font-weight:bold; letter-spacing:.2px;
+  }
+  .tbar .ttl{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tbtn{
+    width:22px; height:20px; min-height:20px; padding:0;
+    font-family:Verdana,sans-serif; font-size:11px; font-weight:bold; line-height:18px;
+  }
+  .menu{ display:flex; gap:2px; padding:3px 4px 2px; }
+  .menu span{ padding:3px 8px; }
+  .menu span.live:active{ background:var(--navy1); color:#fff; }
+
+  /* ---------- main area ---------- */
+  .main{ flex:1; display:flex; min-height:0; padding:0 2px; gap:3px; }
+
+  .tools{
+    width:66px; display:flex; flex-direction:column; gap:4px; padding:3px 2px;
+  }
+  .toolgrid{ display:grid; grid-template-columns:1fr 1fr; gap:3px; }
+  .tool{ height:40px; min-height:40px; padding:0; display:flex; align-items:center; justify-content:center; }
+  .tool svg{ width:22px; height:22px; }
+  .sizes{ margin-top:2px; padding:5px 3px; display:flex; flex-direction:column; gap:4px; background:#fff;
+    box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); }
+  .size{ height:30px; min-height:30px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--face); }
+  .size i{ display:block; border-radius:50%; background:#000; }
+  .size.on i{ background:var(--navy1); }
+  .s1 i{ width:6px; height:6px; } .s2 i{ width:11px; height:11px; } .s3 i{ width:17px; height:17px; }
+
+  /* the canvas — a preview of the night wall, not white paper */
+  .stagewrap{ flex:1; min-width:0; padding:3px;
+    box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi),
+                inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--lite);
+    background:var(--face);
+  }
+  #stage{
+    position:relative; width:100%; height:100%; overflow:hidden;
+    background:
+      radial-gradient(120% 90% at 50% 10%, rgba(255,210,90,.05), transparent 55%),
+      repeating-linear-gradient(0deg, transparent 0 26px, rgba(0,0,0,.55) 26px 28px),
+      repeating-linear-gradient(90deg, transparent 0 56px, rgba(0,0,0,.35) 56px 58px),
+      #16141b;
+    touch-action:none; cursor:crosshair;
+  }
+  #art{ position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
+  #stage .hintchip{
+    position:absolute; top:6px; left:6px; padding:2px 6px; font-size:10px;
+    color:#9aa; background:rgba(0,0,0,.45); pointer-events:none; letter-spacing:.4px;
+  }
+
+  /* ---------- colors ---------- */
+  .colors{ display:flex; align-items:center; gap:6px; padding:5px 6px 3px; }
+  .cur{ position:relative; width:44px; height:38px; flex:0 0 auto; background:var(--face);
+    box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); }
+  .cur .fg{ position:absolute; left:6px; top:5px; width:22px; height:18px; background:var(--sun);
+    box-shadow: inset 1px 1px 0 var(--dk), 0 0 0 1px var(--hi); z-index:2; }
+  .cur .bg{ position:absolute; right:5px; bottom:4px; width:22px; height:18px; background:#16141b;
+    box-shadow: inset 1px 1px 0 var(--dk), 0 0 0 1px var(--hi); }
+  .swatches{ flex:1; display:grid; grid-template-columns:repeat(8,1fr); gap:3px; }
+  .sw{ height:26px; min-height:26px; padding:0; border:0; cursor:pointer;
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,.55), inset -1px -1px 0 rgba(255,255,255,.5); }
+  .sw.on{ outline:2px dotted #000; outline-offset:-4px; }
+
+  /* ---------- send bar ---------- */
+  .sendbar{ display:flex; gap:6px; padding:3px 6px 5px; align-items:stretch; }
+  #tagname{
+    flex:1; min-width:0; font:inherit; font-size:14px; letter-spacing:1px;
+    text-transform:uppercase; padding:6px 8px; border:0; background:#fff; color:#000;
+    box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi),
+                inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--lite);
+  }
+  #tagname::placeholder{ color:#888; letter-spacing:.5px; text-transform:none; }
+  #sendBtn{ font-weight:bold; min-width:118px; }
+
+  .status{ display:flex; gap:3px; padding:0 4px 3px; }
+  .status div{ background:var(--face); padding:3px 7px; font-size:11px; color:#222;
+    box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); white-space:nowrap; overflow:hidden; }
+  .status .grow{ flex:1; text-overflow:ellipsis; }
+
+  /* ---------- taskbar ---------- */
+  .taskbar{
+    height:42px; flex:0 0 auto; display:flex; align-items:center; gap:5px; padding:4px 5px;
+    padding-bottom:calc(4px + env(safe-area-inset-bottom));
+    height:calc(42px + env(safe-area-inset-bottom));
+    background:var(--face);
+    box-shadow: inset 0 1px 0 var(--hi), inset 0 2px 0 var(--lite);
+  }
+  #startBtn{ font-weight:bold; display:flex; align-items:center; gap:5px; padding:3px 9px; }
+  .tasktab{ flex:1; min-width:0; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
+  .tray{ padding:5px 10px; font-size:12px; background:var(--face);
+    box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); }
+
+  .smenu{
+    position:absolute; left:6px; bottom:calc(48px + env(safe-area-inset-bottom)); width:210px; z-index:60;
+    background:var(--face); padding:3px;
+    box-shadow: inset -1px -1px 0 var(--dk), inset 1px 1px 0 var(--lite),
+                inset -2px -2px 0 var(--sh), inset 2px 2px 0 var(--hi),
+                3px 3px 0 rgba(0,0,0,.35);
+    display:flex;
+  }
+  .smenu .rail{ width:26px; background:linear-gradient(180deg,var(--navy1),var(--navy2)); color:#fff;
+    writing-mode:vertical-rl; transform:rotate(180deg); font-weight:bold; letter-spacing:2px;
+    display:flex; align-items:center; justify-content:flex-start; padding:8px 0; font-size:13px; }
+  .smenu ul{ list-style:none; flex:1; }
+  .smenu li{ padding:9px 10px; display:flex; gap:8px; align-items:center; }
+  .smenu li.dis{ color:var(--sh); text-shadow:1px 1px 0 var(--hi); }
+  .smenu li.live:active{ background:var(--navy1); color:#fff; }
+  .smenu hr{ border:0; border-top:1px solid var(--sh); border-bottom:1px solid var(--hi); margin:2px 4px; }
+
+  /* ---------- dialogs ---------- */
+  #shade{ position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:80;
+    display:none; align-items:center; justify-content:center; padding:16px; }
+  #shade.open{ display:flex; }
+  .dlg{ width:100%; max-width:330px; background:var(--face); padding:3px;
+    box-shadow: inset -1px -1px 0 var(--dk), inset 1px 1px 0 var(--lite),
+                inset -2px -2px 0 var(--sh), inset 2px 2px 0 var(--hi),
+                4px 4px 0 rgba(0,0,0,.4); }
+  .dlg .body{ padding:14px 12px; display:flex; gap:12px; align-items:flex-start; line-height:1.5; }
+  .dlg .body .ico{ font-size:30px; line-height:1; }
+  .dlg .btns{ display:flex; gap:8px; justify-content:center; padding:2px 10px 12px; flex-wrap:wrap; }
+  .dlg .btns .btn{ min-width:86px; font-weight:bold; }
+
+  .pbarwrap{ margin-top:10px; height:18px; padding:2px; background:#fff;
+    box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi); display:flex; gap:2px; }
+  .pbarwrap i{ flex:1; background:transparent; }
+  .pbarwrap i.f{ background:var(--navy1); }
+  .ptext{ margin-top:8px; color:#222; min-height:15px; }
+</style>
+</head>
+<body>
+
+<div id="desktop">
+  <div class="win">
+    <div class="tbar">
+      <span>🌞</span>
+      <span class="ttl">bigsun — Paint</span>
+      <button class="btn tbtn" id="btnMin" aria-label="Minimize">_</button>
+      <button class="btn tbtn" aria-label="Maximize">□</button>
+      <button class="btn tbtn" id="btnX" aria-label="Close">×</button>
+    </div>
+
+    <div class="menu">
+      <span>File</span><span>Edit</span><span>View</span><span>Image</span><span>Colors</span>
+      <span class="live" id="mHelp">Help</span>
+    </div>
+
+    <div class="main">
+      <div class="tools">
+        <div class="toolgrid">
+          <button class="btn tool on" id="tSpray" title="Airbrush" aria-label="Airbrush">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
+              <rect x="8" y="8" width="8" height="13" rx="1" fill="#c0c0c0"/>
+              <rect x="10" y="4" width="4" height="4" fill="#000"/>
+              <path d="M16 5h2M17 8h3M16 11h2" stroke-linecap="round"/>
+              <circle cx="21" cy="5" r=".8" fill="#000" stroke="none"/>
+              <circle cx="22" cy="9" r=".8" fill="#000" stroke="none"/>
+            </svg>
+          </button>
+          <button class="btn tool" id="tBrush" title="Brush" aria-label="Brush">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
+              <path d="M4 20c1-4 3-4 5-6L17 6l2 2-8 8c-2 2-2 4-7 4z" fill="#c0c0c0"/>
+              <path d="M16 5l3 3" stroke-width="2"/>
+            </svg>
+          </button>
+          <button class="btn tool" id="tErase" title="Eraser" aria-label="Eraser">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
+              <rect x="5" y="10" width="12" height="8" transform="rotate(-20 11 14)" fill="#fff"/>
+            </svg>
+          </button>
+          <button class="btn tool" id="tUndo" title="Undo" aria-label="Undo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
+              <path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12" transform="translate(0,-5)"/>
+            </svg>
+          </button>
+          <button class="btn tool" id="tClear" title="Clear all" aria-label="Clear all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
+              <path d="M8 6V4h8v2M5 6h14M7 6l1 14h8l1-14" fill="#c0c0c0"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sizes">
+          <button class="btn size s1" data-s="0" aria-label="Small nozzle"><i></i></button>
+          <button class="btn size s2 on" data-s="1" aria-label="Medium nozzle"><i></i></button>
+          <button class="btn size s3" data-s="2" aria-label="Large nozzle"><i></i></button>
+        </div>
+      </div>
+
+      <div class="stagewrap">
+        <div id="stage">
+          <canvas id="art"></canvas>
+          <div class="hintchip">NIGHT WALL PREVIEW</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="colors">
+      <div class="cur"><div class="fg" id="curFg"></div><div class="bg"></div></div>
+      <div class="swatches" id="sw"></div>
+    </div>
+
+    <div class="sendbar">
+      <input id="tagname" maxlength="18" placeholder="your tag name" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="btn" id="sendBtn">Send to Wall</button>
+    </div>
+
+    <div class="status">
+      <div class="grow" id="statL">For Help, ask the bar.</div>
+      <div id="statR">Blue Note Park</div>
+    </div>
+  </div>
+</div>
+
+<div class="taskbar">
+  <button class="btn" id="startBtn"><span>🌞</span>Start</button>
+  <button class="btn on tasktab">🎨 bigsun — Paint</button>
+  <div class="tray" id="clock">--:--</div>
+</div>
+
+<div class="smenu" id="smenu" hidden>
+  <div class="rail">BIG SUN 95</div>
+  <ul>
+    <li class="dis">📁 Programs <span style="margin-left:auto">▸</span></li>
+    <li class="dis">📄 Documents <span style="margin-left:auto">▸</span></li>
+    <li class="live" id="miAbout">🌞 About Big Sun Wall</li>
+    <hr>
+    <li class="live" id="miShut">🔌 Shut Down…</li>
+  </ul>
+</div>
+
+<div id="shade"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ================= dialogs ================= */
+  const shade = document.getElementById('shade');
+  let dlgOpen = 0;
+
+  function dlg(opts){
+    dlgOpen++;
+    shade.classList.add('open');
+    const box = document.createElement('div');
+    box.className = 'dlg';
+    box.innerHTML =
+      '<div class="tbar"><span class="ttl">' + opts.title + '</span></div>' +
+      '<div class="body">' + (opts.icon ? '<div class="ico">' + opts.icon + '</div>' : '') +
+      '<div style="flex:1">' + opts.body + '</div></div>' +
+      '<div class="btns"></div>';
+    const btnRow = box.querySelector('.btns');
+    (opts.buttons || [{label:'OK'}]).forEach(function(b){
+      const el = document.createElement('button');
+      el.className = 'btn';
+      el.textContent = b.label;
+      el.addEventListener('click', function(){
+        let keep = false;
+        if (b.onClick) keep = b.onClick() === 'keep';
+        if (!keep) close();
+      });
+      btnRow.appendChild(el);
+    });
+    function close(){
+      if (!box.parentNode) return;
+      box.remove();
+      dlgOpen--;
+      if (dlgOpen <= 0){ dlgOpen = 0; shade.classList.remove('open'); }
+    }
+    shade.appendChild(box);
+    return { el: box, close: close };
+  }
+
+  function progressDlg(){
+    const h = dlg({
+      title: 'Saving to wall…',
+      body: '<div>Transmitting your piece to Blue Note Park.</div>' +
+            '<div class="pbarwrap" id="pb">' + '<i></i>'.repeat(18) + '</div>' +
+            '<div class="ptext" id="pt">Shaking the can…</div>',
+      buttons: []
+    });
+    const cells = h.el.querySelectorAll('#pb i');
+    const pt = h.el.querySelector('#pt');
+    return {
+      set: function(k){ cells.forEach(function(c,i){ c.classList.toggle('f', i < k); }); },
+      text: function(t){ pt.textContent = t; },
+      close: h.close
+    };
+  }
+
+  /* ================= canvas setup ================= */
+  const stage = document.getElementById('stage');
+  const art = document.getElementById('art');
+  const ctx = art.getContext('2d', { willReadFrequently: true });
+  const DPR = Math.min(2, window.devicePixelRatio || 1);
+
+  function sizeCanvas(){
+    const r = stage.getBoundingClientRect();
+    const w = Math.max(1, Math.round(r.width * DPR));
+    const h = Math.max(1, Math.round(r.height * DPR));
+    if (art.width === w && art.height === h) return;
+    let snap = null;
+    if (art.width > 1 && art.height > 1){
+      snap = document.createElement('canvas');
+      snap.width = art.width; snap.height = art.height;
+      snap.getContext('2d').drawImage(art, 0, 0);
+    }
+    art.width = w; art.height = h;
+    if (snap) ctx.drawImage(snap, 0, 0, w, h);
+  }
+  window.addEventListener('resize', function(){ setTimeout(sizeCanvas, 60); });
+  sizeCanvas();
+
+  /* ================= tools & colors ================= */
+  const SPRAY_R  = [9, 16, 26];   // css px
+  const BRUSH_W  = [7, 13, 22];
+  const ERASE_W  = [18, 30, 48];
+
+  let tool = 'spray';
+  let sizeIdx = 1;
+  let color = '#FFD400';
+
+  const COLORS = [
+    '#FFD400','#FF9500','#FF3D00','#FF2E88','#B44BFF','#00E5FF','#38FF9C','#FFFFFF',
+    '#FFF0A6','#FFCE8F','#FFB09A','#FF9AC8','#DDB6FF','#B0F4FF','#C4FFDF','#BFC7D9'
+  ];
+  const swBox = document.getElementById('sw');
+  const curFg = document.getElementById('curFg');
+  COLORS.forEach(function(c, i){
+    const b = document.createElement('button');
+    b.className = 'sw' + (i === 0 ? ' on' : '');
+    b.style.background = c;
+    b.setAttribute('aria-label', 'Color ' + c);
+    b.addEventListener('click', function(){
+      color = c;
+      curFg.style.background = c;
+      swBox.querySelectorAll('.sw').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      if (tool === 'erase') setTool('spray');
+    });
+    swBox.appendChild(b);
+  });
+
+  const toolBtns = { spray: tSpray, brush: tBrush, erase: tErase };
+  function setTool(t){
+    tool = t;
+    Object.keys(toolBtns).forEach(function(k){ toolBtns[k].classList.toggle('on', k === t); });
+  }
+  tSpray.addEventListener('click', function(){ setTool('spray'); });
+  tBrush.addEventListener('click', function(){ setTool('brush'); });
+  tErase.addEventListener('click', function(){ setTool('erase'); });
+
+  document.querySelectorAll('.size').forEach(function(b){
+    b.addEventListener('click', function(){
+      sizeIdx = +b.dataset.s;
+      document.querySelectorAll('.size').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+
+  /* ================= undo ================= */
+  const undoStack = [];
+  let restoring = false;
+  function pushUndo(){
+    if (undoStack.length >= 10) undoStack.shift();
+    try { undoStack.push(art.toDataURL()); } catch(e){}
+  }
+  function doUndo(){
+    if (restoring || !undoStack.length) return;
+    restoring = true;
+    const img = new Image();
+    img.onload = function(){
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, art.width, art.height);
+      ctx.drawImage(img, 0, 0, art.width, art.height);
+      restoring = false;
+    };
+    img.src = undoStack.pop();
+  }
+  tUndo.addEventListener('click', doUndo);
+
+  tClear.addEventListener('click', function(){
+    dlg({
+      title: 'Paint',
+      icon: '⚠️',
+      body: 'Throw the whole piece out and start over?',
+      buttons: [
+        { label: 'Clear it', onClick: function(){
+            pushUndo();
+            ctx.clearRect(0, 0, art.width, art.height);
+            drips.length = 0;
+          } },
+        { label: 'Cancel' }
+      ]
+    });
+  });
+
+  /* ================= drawing engine ================= */
+  let down = false;
+  let cur = {x:0, y:0}, last = {x:0, y:0}, prevFrame = {x:0, y:0};
+  const drips = [];
+
+  function pt(e){
+    const r = stage.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * DPR, y: (e.clientY - r.top) * DPR };
+  }
+  function dist(a, b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
+
+  function sprayAt(x, y, r){
+    const dots = Math.round(r / DPR * 1.15);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = color;
+    for (let i = 0; i < dots; i++){
+      const a = Math.random() * Math.PI * 2;
+      const d = Math.pow(Math.random(), 0.75) * r;
+      ctx.globalAlpha = 0.06 + Math.random() * 0.22;
+      const s = (0.6 + Math.random() * 1.1) * DPR;
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, s, 0, 7);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function segment(a, b){
+    ctx.save();
+    if (tool === 'erase'){
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = ERASE_W[sizeIdx] * DPR;
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = BRUSH_W[sizeIdx] * DPR;
+    }
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x + 0.01, b.y + 0.01);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function maybeDrip(p, speed, r){
+    if (drips.length > 40) return;
+    const still = speed < 2 * DPR ? 2.2 : 0.55;
+    if (Math.random() < 0.05 * (r / (16 * DPR)) * still){
+      drips.push({
+        x: p.x + (Math.random() - 0.5) * r * 0.8,
+        y: p.y + (Math.random() * r * 0.4),
+        len: 0,
+        maxLen: (24 + Math.random() * 110) * DPR,
+        w: 1.2 + Math.random() * 1.8,
+        speed: 0.6 + Math.random() * 1.4,
+        color: color
+      });
+    }
+  }
+
+  function updateDrips(){
+    for (let i = drips.length - 1; i >= 0; i--){
+      const d = drips[i];
+      const step = d.speed * DPR;
+      d.y += step; d.len += step;
+      const t = d.len / d.maxLen;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = d.color;
+      ctx.globalAlpha = 0.28 * (1 - t * 0.6);
+      const w = Math.max(0.4, d.w * (1 - t * 0.55)) * DPR;
+      ctx.beginPath();
+      ctx.arc(d.x + Math.sin(d.len * 0.08) * 0.8 * DPR, d.y, w, 0, 7);
+      ctx.fill();
+      if (t >= 1){
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.w * 1.5 * DPR, 0, 7);
+        ctx.fill();
+        drips.splice(i, 1);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  stage.addEventListener('pointerdown', function(e){
+    if (dlgOpen) return;
+    e.preventDefault();
+    try { stage.setPointerCapture(e.pointerId); } catch(x){}
+    down = true;
+    cur = last = prevFrame = pt(e);
+    pushUndo();
+    if (tool !== 'spray') segment(cur, cur);
+  });
+
+  stage.addEventListener('pointermove', function(e){
+    if (!down) return;
+    e.preventDefault();
+    const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (let i = 0; i < list.length; i++){
+      const q = pt(list[i]);
+      if (tool !== 'spray') segment(last, q);
+      last = q;
+    }
+    cur = last;
+  });
+
+  function stopStroke(){ down = false; }
+  stage.addEventListener('pointerup', stopStroke);
+  stage.addEventListener('pointercancel', stopStroke);
+  stage.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+  function frame(){
+    if (down && tool === 'spray' && !restoring){
+      const r = SPRAY_R[sizeIdx] * DPR;
+      const sp = dist(prevFrame, cur);
+      const steps = Math.max(1, Math.round(sp / (r * 0.5)));
+      for (let i = 1; i <= steps; i++){
+        const px = prevFrame.x + (cur.x - prevFrame.x) * i / steps;
+        const py = prevFrame.y + (cur.y - prevFrame.y) * i / steps;
+        sprayAt(px, py, r);
+      }
+      maybeDrip(cur, sp, r);
+    }
+    prevFrame = cur;
+    updateDrips();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ================= submit ================= */
+  const sendBtn = document.getElementById('sendBtn');
+  const nameInput = document.getElementById('tagname');
+
+  let token = null;
+  try {
+    token = localStorage.getItem('bsw_token');
+    if (!token){
+      token = 't' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('bsw_token', token);
+    }
+  } catch(e){ token = 't' + Math.random().toString(36).slice(2); }
+
+  function hasPaint(){
+    try {
+      const d = ctx.getImageData(0, 0, art.width, art.height).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 64){
+        if (d[i] > 12 && ++n > 90) return true;
+      }
+    } catch(e){ return true; }
+    return false;
+  }
+
+  function exportPNG(){
+    const LONG = 640;
+    const s = Math.min(1, LONG / Math.max(art.width, art.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(art.width * s));
+    c.height = Math.max(1, Math.round(art.height * s));
+    c.getContext('2d').drawImage(art, 0, 0, c.width, c.height);
+    return { data: c.toDataURL('image/png'), w: c.width, h: c.height };
+  }
+
+  let cooldownTimer = null;
+  function startCooldown(sec){
+    clearInterval(cooldownTimer);
+    let s = sec;
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Wait ' + s + 's';
+    cooldownTimer = setInterval(function(){
+      s--;
+      if (s <= 0){
+        clearInterval(cooldownTimer);
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send to Wall';
+      } else {
+        sendBtn.textContent = 'Wait ' + s + 's';
+      }
+    }, 1000);
+  }
+
+  sendBtn.addEventListener('click', function(){
+    const name = nameInput.value.trim().toUpperCase();
+    if (!name){
+      dlg({ title:'Paint', icon:'✋', body:'Type a tag name first — the wall wants to know who made it.',
+            buttons:[{ label:'OK', onClick:function(){ nameInput.focus(); } }] });
+      return;
+    }
+    if (!hasPaint()){
+      dlg({ title:'Paint', icon:'🎨', body:'The can is full and the wall is empty. Spray something first.' });
+      return;
+    }
+
+    sendBtn.disabled = true;
+    const p = progressDlg();
+    let k = 0;
+    const phases = ['Shaking the can…', 'Spraying pixels…', 'Beaming to Blue Note Park…'];
+    const anim = setInterval(function(){
+      if (k < 15){ k++; p.set(k); }
+      if (k === 5) p.text(phases[1]);
+      if (k === 11) p.text(phases[2]);
+    }, 90);
+
+    const out = exportPNG();
+    const ctrl = new AbortController();
+    const kill = setTimeout(function(){ ctrl.abort(); }, 15000);
+
+    fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      signal: ctrl.signal,
+      body: JSON.stringify({ name: name, image: out.data, w: out.w, h: out.h, token: token })
+    })
+    .then(function(r){ return r.json().then(function(j){ return { s: r.status, j: j }; }); })
+    .then(function(res){
+      clearTimeout(kill); clearInterval(anim);
+      if (res.j && res.j.ok){
+        p.set(18); p.text('✓ Queued for the moderator');
+        if (navigator.vibrate) navigator.vibrate(12);
+        setTimeout(function(){
+          p.close();
+          dlg({
+            title: 'Sent! 🌞',
+            body: 'Your piece is <b>#' + res.j.position + ' in line</b>.<br>' +
+                  'Watch the wall over the bar — when the moderator waves it through, it ignites.',
+            buttons: [
+              { label: 'Paint another', onClick: function(){
+                  ctx.clearRect(0, 0, art.width, art.height);
+                  drips.length = 0; undoStack.length = 0;
+                } },
+              { label: 'Keep this one' }
+            ]
+          });
+          startCooldown(45);
+        }, 500);
+      } else if (res.s === 429){
+        p.close();
+        const w = (res.j && res.j.wait) || 45;
+        dlg({ title:'Easy there', icon:'⏳',
+              body:'One piece per phone every 45 seconds.<br>Try again in ' + w + 's — your drawing is safe.' });
+        startCooldown(w);
+      } else {
+        p.close();
+        dlg({ title:'Paint', icon:'❗',
+              body:(res.j && res.j.error) || 'The wall said no. Try again.' });
+        sendBtn.disabled = false;
+      }
+    })
+    .catch(function(){
+      clearTimeout(kill); clearInterval(anim); p.close();
+      dlg({ title:'No signal', icon:'📡',
+            body:'Couldn\u2019t reach the wall — check your connection and hit Send again. Your drawing is safe.' });
+      sendBtn.disabled = false;
+    });
+  });
+
+  /* ================= taskbar, clock, menus ================= */
+  const clock = document.getElementById('clock');
+  function tick(){
+    clock.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  tick(); setInterval(tick, 20000);
+
+  const smenu = document.getElementById('smenu');
+  document.getElementById('startBtn').addEventListener('click', function(e){
+    e.stopPropagation();
+    smenu.hidden = !smenu.hidden;
+  });
+  document.addEventListener('click', function(e){
+    if (!smenu.hidden && !smenu.contains(e.target)) smenu.hidden = true;
+  });
+
+  function about(){
+    smenu.hidden = true;
+    dlg({
+      title: 'About Big Sun Wall',
+      icon: '🌞',
+      body: '<b>Big Sun Wall \u201995</b><br>Paint (Blue Note Park Edition)<br><br>' +
+            'Spray a tag \u2192 Send \u2192 it glows on the brick over the bar.<br><br>' +
+            '<i>Pro tip: hold the spray still and it drips.</i>'
+    });
+  }
+  document.getElementById('miAbout').addEventListener('click', about);
+  document.getElementById('mHelp').addEventListener('click', about);
+  document.getElementById('miShut').addEventListener('click', function(){
+    smenu.hidden = true;
+    dlg({ title:'Shut Down Windows', icon:'🔌', body:'It is now safe to keep painting.' });
+  });
+  document.getElementById('btnX').addEventListener('click', function(){
+    dlg({ title:'Paint', icon:'🖌️', body:'This program is busy painting a wall.' });
+  });
+  document.getElementById('btnMin').addEventListener('click', function(){
+    dlg({ title:'Paint', icon:'🫥', body:'Nowhere to minimize to. It\u2019s 1995 and this phone is the whole computer.' });
+  });
+
+  /* rotating hints in the status bar */
+  const hints = [
+    'For Help, ask the bar.',
+    'Hold the spray still — it drips.',
+    'Brush = clean lines · Spray = glow.',
+    'Your piece appears after a human OKs it.'
+  ];
+  let hi = 0;
+  setInterval(function(){
+    hi = (hi + 1) % hints.length;
+    document.getElementById('statL').textContent = hints[hi];
+  }, 8000);
+
+})();
+</script>
+</body>
+</html>
