@@ -76,8 +76,12 @@ setInterval(() => {
 const RESERVE_QR_CORNER = false;
 
 function assignPlacement(aspect) {
-  const scale = 0.12 + Math.random() * 0.10;               // piece width as a fraction of wall width
-  const hFrac = Math.min(0.8, scale * (aspect || 1) * (16 / 9));
+  /* `scale` is an area measure, not a width: the wall divides it by
+     sqrt(aspect) so tall and wide pieces end up equally prominent. */
+  const scale = 0.16 + Math.random() * 0.12;
+  const a = aspect || 1;
+  const wFrac = scale / Math.sqrt(a);
+  const hFrac = Math.min(0.8, wFrac * a * (16 / 9));
   const yMin = 0.05 + hFrac / 2;
   const yMax = Math.max(yMin + 0.01, 0.90 - hFrac / 2);
   const recent = approved.slice(-14);

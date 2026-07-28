@@ -86,16 +86,15 @@
   .s1 i{ width:6px; height:6px; } .s2 i{ width:11px; height:11px; } .s3 i{ width:17px; height:17px; }
 
   /* the canvas — a preview of the night wall, not white paper */
-  .stagewrap{ flex:1; min-width:0; padding:6px;
-    display:flex; align-items:center; justify-content:center;
+  .stagewrap{ flex:1; min-width:0; min-height:0; padding:3px;
+    display:flex; align-items:stretch; justify-content:stretch;
     box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi),
                 inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--lite);
     background:var(--face);
   }
   #stage{
     position:relative; overflow:hidden;
-    width:100%; max-width:100%; max-height:100%;
-    aspect-ratio:3 / 2;               /* fixed bitmap shape, however you hold the phone */
+    width:100%; height:100%;
     box-shadow:0 0 0 1px var(--dk);
     background:
       radial-gradient(120% 90% at 50% 10%, rgba(255,210,90,.05), transparent 55%),
@@ -157,6 +156,7 @@
                 3px 3px 0 rgba(0,0,0,.35);
     display:flex;
   }
+  .smenu[hidden]{ display:none; }   /* display:flex above beats the hidden attribute without this */
   .smenu .rail{ width:26px; background:linear-gradient(180deg,var(--navy1),var(--navy2)); color:#fff;
     writing-mode:vertical-rl; transform:rotate(180deg); font-weight:bold; letter-spacing:2px;
     display:flex; align-items:center; justify-content:flex-start; padding:8px 0; font-size:13px; }
@@ -631,13 +631,46 @@
     return false;
   }
 
+  function inkBounds(){
+    try {
+      const d = ctx.getImageData(0, 0, art.width, art.height).data;
+      let x0 = art.width, y0 = art.height, x1 = -1, y1 = -1;
+      for (let y = 0; y < art.height; y++){
+        const row = y * art.width * 4;
+        for (let x = 0; x < art.width; x++){
+          if (d[row + x * 4 + 3] > 10){
+            if (x < x0) x0 = x;
+            if (x > x1) x1 = x;
+            if (y < y0) y0 = y;
+            if (y > y1) y1 = y;
+          }
+        }
+      }
+      if (x1 < 0) return null;
+      return { x0: x0, y0: y0, x1: x1, y1: y1 };
+    } catch(e){ return null; }
+  }
+
   function exportPNG(){
     const LONG = 640;
-    const s = Math.min(1, LONG / Math.max(art.width, art.height));
+    let sx = 0, sy = 0, sw = art.width, sh = art.height;
+
+    // crop to what was actually drawn, plus a little breathing room
+    const b = inkBounds();
+    if (b){
+      const pad = Math.round(Math.max(b.x1 - b.x0, b.y1 - b.y0) * 0.04) + 6;
+      sx = Math.max(0, b.x0 - pad);
+      sy = Math.max(0, b.y0 - pad);
+      sw = Math.min(art.width  - sx, (b.x1 - b.x0) + pad * 2);
+      sh = Math.min(art.height - sy, (b.y1 - b.y0) + pad * 2);
+    }
+    sw = Math.max(1, sw); sh = Math.max(1, sh);
+
+    const k = Math.min(1, LONG / Math.max(sw, sh));
     const c = document.createElement('canvas');
-    c.width = Math.max(1, Math.round(art.width * s));
-    c.height = Math.max(1, Math.round(art.height * s));
-    c.getContext('2d').drawImage(art, 0, 0, c.width, c.height);
+    c.width  = Math.max(1, Math.round(sw * k));
+    c.height = Math.max(1, Math.round(sh * k));
+    c.getContext('2d').drawImage(art, sx, sy, sw, sh, 0, 0, c.width, c.height);
     return { data: c.toDataURL('image/png'), w: c.width, h: c.height };
   }
 
@@ -778,7 +811,8 @@
     'For Help, ask the bar.',
     'Hold the spray still — it drips.',
     'Brush = clean lines · Spray = glow.',
-    'Sign it in paint \u2014 that is your tag.'
+    'Sign it in paint \u2014 that is your tag.',
+    'Draw big \u2014 blank space is trimmed off.'
   ];
   let hi = 0;
   setInterval(function(){

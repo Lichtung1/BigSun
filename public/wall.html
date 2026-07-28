@@ -420,8 +420,9 @@ function applyScheme(ix, remember) {
 /* ---------------- drawing one tag ---------------- */
 function drawTag(g, t, alpha, scaleMul) {
   if (!t.loaded) return;
-  const w = t.scale * W * (scaleMul || 1);
-  const h = w * (t.aspect || 1);
+  const a = t.aspect || 1;
+  const w = t.scale * W * (scaleMul || 1) / Math.sqrt(a);   // equal area, any shape
+  const h = w * a;
 
   g.save();
   g.translate(t.x * W, t.y * H);
