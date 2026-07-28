@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WALL.bmp — bigsun Paint</title>
+<title>WALL.bmp - bigsun Paint</title>
 <style>
 /* ============================================================
-   BIG SUN WALL — projector display
+   BIG SUN WALL: projector display
    A giant Windows 95 Paint window. The mural lives inside the
    canvas area, which stays dark: a projector paints with light,
    so a dark canvas is what makes the tags read as neon on brick.
@@ -72,7 +72,7 @@ body {
   color: var(--text);
   font-family: "MS Sans Serif", "Tahoma", "Geneva", sans-serif;
   /* everything scales off this, so the chrome reads from across the park */
-  font-size: clamp(12px, 2.05vh, 30px);
+  font-size: clamp(11px, 1.75vh, 26px);
   display: flex; flex-direction: column;
   padding: 0.55em 0.55em 0;
   user-select: none;
@@ -128,7 +128,7 @@ body.nocursor { cursor: none; }
 
 .mid { flex: 1; min-height: 0; display: flex; gap: 0.25em; padding: 0.1em 0.2em 0.2em; }
 
-/* ---------- toolbox (decorative — the spray can is selected) ---------- */
+/* ---------- toolbox (decorative, the spray can is selected) ---------- */
 .toolbox {
   flex: 0 0 auto; padding: 3px;
   display: grid; grid-template-columns: repeat(2, 40px); gap: 2px;
@@ -232,7 +232,7 @@ canvas#wall { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 }
 
 /* the QR as a little Win95 dialog. Its inner panel stays white in every
-   scheme — a QR needs light quiet zones to scan reliably. */
+   scheme, because a QR needs light quiet zones to scan reliably. */
 #qrPanel {
   position: absolute; right: 1.6%; bottom: 2.4%; z-index: 5;
   background: var(--face); padding: 0.18em;
@@ -246,14 +246,6 @@ canvas#wall { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 #qrPanel .cap { font-weight: bold; font-size: clamp(10px, 1.05vw, 16px); letter-spacing: .1em; margin-top: 0.45em; }
 #qrPanel .url { font-size: clamp(8px, .75vw, 12px); color: #333; margin-top: 0.15em; word-break: break-all; }
 
-#empty {
-  position: absolute; inset: 0; z-index: 4;
-  display: flex; align-items: center; justify-content: center;
-  color: rgba(255,212,0,.5); font-size: clamp(15px, 1.9vw, 26px);
-  font-family: "Courier New", monospace;
-  letter-spacing: .2em; text-align: center; pointer-events: none;
-  text-shadow: 0 0 18px rgba(255,180,0,.35);
-}
 
 /* ---------- help dialog ---------- */
 #wipe {
@@ -304,7 +296,7 @@ body.bare .paintstage { box-shadow: none; }
   <div class="titlebar">
     <span class="ic" id="appIcon"><svg viewBox="0 0 16 16"><rect width="16" height="16" fill="#000080"/><rect x="3" y="3" width="10" height="10" fill="#FFD400"/></svg></span><span>WALL.bmp - bigsun Paint</span>
     <span class="sp"></span>
-    <span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="currentColor"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="3" y="2" width="10" height="3"/><rect x="3" y="5" width="1" height="6"/><rect x="12" y="5" width="1" height="6"/><rect x="3" y="10" width="10" height="1"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span>
+    <span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="5" y="6" width="6" height="2" fill="currentColor"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="3" y="2" width="10" height="3"/><rect x="3" y="5" width="1" height="6"/><rect x="12" y="5" width="1" height="6"/><rect x="3" y="10" width="10" height="1"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span>
   </div>
 
   <div class="menubar">
@@ -317,8 +309,7 @@ body.bare .paintstage { box-shadow: none; }
 
     <div class="paintstage">
       <canvas id="wall"></canvas>
-      <div id="neonTitle">BIG SUN WALL</div>
-      <div id="empty">scan the code &rarr; your tag ignites here</div>
+      <div id="neonTitle" class="hidden">BIG SUN WALL</div>
 
       <div id="qrPanel" class="hidden">
         <div class="titlebar"><span>Paint the Wall</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
@@ -394,7 +385,7 @@ body.bare .paintstage { box-shadow: none; }
 <script src="/socket.io/socket.io.js"></script>
 <script>
 /* ================================================================
-   BIG SUN WALL — projector display
+   BIG SUN WALL: projector display
 
    Rendering: settled pieces are baked into an offscreen canvas and
    a cached glow layer, so each frame is only a couple of drawImage
@@ -668,7 +659,7 @@ function drawTag(g, t, alpha, scaleMul) {
   g.save();
   g.translate(t.x * W, t.y * H);
   g.rotate((t.rot || 0) * Math.PI / 180);
-  g.globalCompositeOperation = 'screen';   // light on brick — dark pixels vanish
+  g.globalCompositeOperation = 'screen';   // light on brick, dark pixels vanish
   g.globalAlpha = alpha;
   g.drawImage(t.img, -w / 2, -h / 2, w, h);
 
@@ -687,7 +678,7 @@ function bakeAll() {
   bctx.clearRect(0, 0, W, H);
   const now = Date.now();
   for (const t of orderedTags()) {
-    if (igniting.has(t.id) || retiring.has(t.id)) continue;   // animating — drawn live
+    if (igniting.has(t.id) || retiring.has(t.id)) continue;   // animating, drawn live
     drawTag(bctx, t, ageAlpha(t, now), 1);
   }
   glowDirty = true;
@@ -868,14 +859,12 @@ function removeTag(id) {
 const dot       = document.getElementById('dot');
 const liveTxt   = document.getElementById('liveTxt');
 const countCell = document.getElementById('countCell');
-const emptyEl   = document.getElementById('empty');
 let connected = false;
 
 function updateChrome() {
   liveTxt.textContent = connected ? 'live' : 'reconnecting…';
   dot.classList.toggle('ok', connected);
   countCell.textContent = tags.size + (tags.size === 1 ? ' piece' : ' pieces');
-  emptyEl.style.display = tags.size ? 'none' : 'flex';
 }
 
 function tickClock() {
@@ -923,7 +912,7 @@ socket.on('wall:retire', id => {                    // aged out: let it dissolve
 
 /* ---------------- layout ----------------
    The canvas fills the Paint window's canvas area, so it's sized from
-   that element — and re-measured whenever it moves (resize, fullscreen,
+   that element, and re-measured whenever it moves (resize, fullscreen,
    or the W and S toggles). */
 function resize() {
   const r = stage.getBoundingClientRect();

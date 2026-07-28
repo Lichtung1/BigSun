@@ -16,7 +16,7 @@
   html,body{ height:100%; overflow:hidden; }
   body{
     font-family:"MS Sans Serif", "Tahoma", "Geneva", sans-serif;
-    font-size:12px; background:var(--teal); color:#000;
+    font-size:13px; background:var(--teal); color:#000;
     position:fixed; inset:0; width:100%;
     height:100vh; height:100dvh;
     display:flex; flex-direction:column;
@@ -48,7 +48,7 @@
   .btn:disabled{ color:var(--sh); text-shadow:1px 1px 0 var(--hi); cursor:default; }
 
   /* ---------- window ---------- */
-  #desktop{ flex:1; display:flex; padding:6px 6px 2px; min-height:0; }
+  #desktop{ flex:1; display:flex; padding:4px 4px 0; min-height:0; }
   .win{
     flex:1; display:flex; flex-direction:column; min-height:0;
     background:var(--face); padding:3px;
@@ -76,20 +76,20 @@
   .main{ flex:1; display:flex; min-height:0; padding:0 2px; gap:3px; }
 
   .tools{
-    width:66px; display:flex; flex-direction:column; gap:4px; padding:3px 2px;
+    width:42px; display:flex; flex-direction:column; gap:3px; padding:2px;
   }
-  .toolgrid{ display:grid; grid-template-columns:1fr 1fr; gap:3px; }
-  .tool{ height:44px; min-height:44px; padding:0; display:flex; align-items:center; justify-content:center; }
+  .toolgrid{ display:grid; grid-template-columns:1fr; gap:3px; }
+  .tool{ height:38px; min-height:38px; padding:0; display:flex; align-items:center; justify-content:center; }
   .tool svg,
   .tool .pngicon{ display:block; width:32px; height:32px; image-rendering:pixelated; }
-  .sizes{ margin-top:2px; padding:5px 3px; display:flex; flex-direction:column; gap:4px; background:#fff;
+  .sizes{ margin-top:2px; padding:5px 3px; display:flex; flex-direction:column; gap:4px; background:var(--lite);
     box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); }
-  .size{ height:30px; min-height:30px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--face); }
+  .size{ height:28px; min-height:28px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--face); }
   .size i{ display:block; border-radius:50%; background:#000; }
   .size.on i{ background:var(--navy1); }
   .s1 i{ width:6px; height:6px; } .s2 i{ width:11px; height:11px; } .s3 i{ width:17px; height:17px; }
 
-  /* the canvas — a preview of the night wall, not white paper */
+  /* the canvas: a preview of the night wall, not white paper */
   .stagewrap{ flex:1; min-width:0; min-height:0; padding:3px;
     display:flex; align-items:stretch; justify-content:stretch;
     box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi),
@@ -124,12 +124,12 @@
   .sw.on{ outline:2px dotted #000; outline-offset:-4px; }
 
   /* ---------- send bar ---------- */
-  .sendbar{ display:flex; gap:6px; padding:3px 6px 5px; align-items:stretch; }
+  .sendbar{ display:flex; gap:6px; padding:3px 4px; align-items:stretch; }
   .sendbar .btn{ flex:1; font-weight:bold; padding:11px 10px; font-size:14px; }
   #sendBtn{ font-weight:bold; min-width:118px; }
 
-  .status{ display:flex; gap:3px; padding:0 4px 3px; }
-  .status div{ background:var(--face); padding:3px 7px; font-size:11px; color:#222;
+  .status{ display:flex; gap:3px; padding:0 4px 2px; }
+  .status div{ background:var(--face); padding:3px 7px; font-size:12px; color:#222;
     box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); white-space:nowrap; overflow:hidden; }
   .status .grow{ flex:1; text-overflow:ellipsis; }
 
@@ -203,8 +203,8 @@
     </div>
 
     <div class="menu">
-      <span>File</span><span>Edit</span><span>View</span><span>Image</span><span>Colors</span>
-      <span class="live" id="mHelp">Help</span>
+      <span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>I</u>mage</span><span><u>C</u>olors</span>
+      <span class="live" id="mHelp"><u>H</u>elp</span>
     </div>
 
     <div class="main">
@@ -493,7 +493,7 @@ function swapIcon(el, name, cls) {
     });
     var tb = { btnMin:'min', btnMax:'max', btnX:'close' };
     var glyph = {
-      min:   '<svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="currentColor"/></svg>',
+      min:   '<svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="5" y="6" width="6" height="2" fill="currentColor"/></svg>',
       max:   '<svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="3" y="2" width="10" height="3"/><rect x="3" y="5" width="1" height="6"/><rect x="12" y="5" width="1" height="6"/><rect x="3" y="10" width="10" height="1"/></svg>',
       close: '<svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg>'
     };
@@ -879,7 +879,7 @@ function swapIcon(el, name, cls) {
         p.close();
         const w = (res.j && res.j.wait) || 45;
         dlg({ title:'Easy there', icon:ICON.info,
-              body:'One piece per phone every 45 seconds.<br>Try again in ' + w + 's — your drawing is safe.' });
+              body:'One piece per phone every 45 seconds.<br>Try again in ' + w + 's. Your drawing is safe.' });
         startCooldown(w);
       } else {
         p.close();
@@ -891,7 +891,7 @@ function swapIcon(el, name, cls) {
     .catch(function(){
       clearTimeout(kill); clearInterval(anim); p.close();
       dlg({ title:'No signal', icon:ICON.stop,
-            body:'Couldn\u2019t reach the wall — check your connection and hit Send again. Your drawing is safe.' });
+            body:'Could not reach the wall. Check your connection and hit Send again. Your drawing is safe.' });
       sendBtn.disabled = false;
     });
   });
@@ -923,8 +923,9 @@ function swapIcon(el, name, cls) {
       title: 'About Big Sun Wall',
       icon: ICON.info,
       body: '<b>Big Sun Wall \u201995</b><br>Paint (Blue Note Park Edition)<br><br>' +
-            'Spray a tag \u2192 Send \u2192 it glows on the brick over the bar.<br><br>' +
-            '<i>Pro tip: hold the spray still and it drips.</i>'
+            'Spray a tag, hit Send, and it glows on the brick over the bar.<br><br>' +
+            'Built by <b>void.raster</b><br>' +
+            '<a href="https://www.instagram.com/void.raster/" target="_blank" rel="noopener">instagram.com/void.raster</a>'
     });
   }
   document.getElementById('miAbout').addEventListener('click', about);
@@ -938,16 +939,15 @@ function swapIcon(el, name, cls) {
   });
   document.getElementById('btnMin').addEventListener('click', function(){
     dlg({ title:'Paint', icon:ICON.info,
-          body:'Nowhere to minimize to \u2014 this phone is the whole computer.' });
+          body:'Nowhere to minimize to. This phone is the whole computer.' });
   });
 
   /* rotating hints in the status bar */
   const hints = [
-    'For Help, ask the bar.',
-    'Hold the spray still — it drips.',
-    'Brush = clean lines · Spray = glow.',
-    'Sign it in paint \u2014 that is your tag.',
-    'Draw big \u2014 blank space is trimmed off.'
+    'For Help, find a friend.',
+    'Hold the spray still and it drips.',
+    'Brush for lines. Spray for glow.',
+    'Draw big. Blank space gets trimmed.'
   ];
   let hi = 0;
   setInterval(function(){

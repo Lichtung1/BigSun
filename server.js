@@ -1,5 +1,5 @@
 /* ================================================================
-   BIG SUN WALL — server
+   BIG SUN WALL: server
    One small Node server that:
      - serves the four pages (paint / wall / mod / qr)
      - accepts drawings from phones (HTTP POST)
@@ -141,7 +141,7 @@ app.post('/api/submit', (req, res) => {
     return res.status(400).json({ ok: false, error: 'Bad image data.' });
   }
   if (b.image.length > 2600000) {
-    return res.status(413).json({ ok: false, error: 'Drawing too large — try a simpler piece.' });
+    return res.status(413).json({ ok: false, error: 'Drawing too large. Try a simpler piece.' });
   }
 
   /* The tag is signed in paint, so a typed name is optional. Kept sanitised

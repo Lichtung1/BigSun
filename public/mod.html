@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>bigsun — Wall Control</title>
+<title>bigsun - Wall Control</title>
 <style>
   :root {
     --gray: #c0c0c0; --dgray: #808080; --lgray: #dfdfdf;
@@ -125,7 +125,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 /* ================================================================
-   Moderation screen. Works fine on a phone — you can run the wall
+   Moderation screen. Works fine on a phone, so you can run the wall
    from beside the bar. Approve = it ignites on the projector.
    ================================================================ */
 
@@ -298,7 +298,7 @@ function connect(pw) {
   socket.on('mod:denied', () => {
     sessionStorage.removeItem('bsw_pw');
     dot.classList.remove('ok');
-    askPassword('Wrong password — try again.');
+    askPassword('Wrong password. Try again.');
   });
 
   socket.on('counts', c => {
