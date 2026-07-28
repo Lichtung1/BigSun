@@ -152,10 +152,11 @@ body.nocursor { cursor: none; }
   image-rendering: crisp-edges;
 }
 
-/* On a projector there's room to double it. Exactly 2x keeps every source
-   pixel a clean 2x2 block; anything between 1x and 2x is what turns pixel
-   art to mush. */
-@media (min-width: 1500px) {
+/* Doubling is reserved for genuinely huge displays (4K and up). At 1080p
+   or 1440p, 1:1 keeps the toolbox in the same proportion as the original.
+   There is deliberately nothing between 1x and 2x - a fractional scale is
+   what turns pixel art to mush. */
+@media (min-width: 2600px) {
   .toolbox { grid-template-columns: repeat(2, 76px); gap: 3px; padding: 4px; }
   .tool { width: 76px; height: 76px; }
   .tool svg,
