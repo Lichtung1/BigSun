@@ -45,6 +45,24 @@ since this is the screen people actually hold:
     undo.png          undo arrow
     clear.png         clear the canvas (currently a bin)
 
+WINDOW AND TASKBAR ICONS
+------------------------
+These two are used by BOTH the phone app and the projector wall, so
+drawing them once covers everything:
+
+    app.png       the little icon in the window title bar, and again
+                  in the taskbar button along the bottom
+    start.png     the logo on the Start button (the Windows flag)
+
+Same spec as the tools: 32 x 32, transparent, no anti-aliasing.
+
+Note app.png is shown small - roughly 16px in the title bar. Keep the
+design bold and simple: a few big shapes read far better at that size
+than fine detail, which just turns to noise.
+
+
+THE WALL'S DECORATIVE TOOLBOX
+-----------------------------
 The projector wall shows a full decorative Paint toolbox. These are
 OPTIONAL. It's seen from across a car park and the built-in ones look
 fine at that distance.

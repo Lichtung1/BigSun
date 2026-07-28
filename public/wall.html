@@ -109,7 +109,10 @@ body.nocursor { cursor: none; }
 }
 .titlebar .sp { flex: 1; }
 .titlebar .ic { display:flex; }
-.titlebar .ic svg { width: 1em; height: 1em; display:block; }
+.titlebar .ic svg, .titlebar .ic .pngicon { width: 1em; height: 1em; display:block; image-rendering: pixelated; }
+.flagwrap, .taskico { display:inline-flex; align-items:center; margin-right:0.3em; }
+.flagwrap svg, .flagwrap .pngicon,
+.taskico svg, .taskico .pngicon { width: 1.1em; height: 1.1em; display:block; image-rendering: pixelated; }
 
 .tbtn {
   background: var(--face); color: var(--text); font-weight: bold;
@@ -137,10 +140,6 @@ body.nocursor { cursor: none; }
   box-shadow: inset -0.07em -0.07em 0 var(--dark), inset 0.07em 0.07em 0 var(--light),
               inset -0.14em -0.14em 0 var(--shadow), inset 0.14em 0.14em 0 var(--hilite);
 }
-/* custom PNG icons are fixed bitmaps drawn for a grey toolbar, so the
-   toolbox reverts to classic grey the moment a complete set loads */
-.toolbox.custom .tool { background: #c0c0c0; color: #000; }
-
 .tool.pressed {
   box-shadow: inset 0.07em 0.07em 0 var(--dark), inset -0.07em -0.07em 0 var(--light),
               inset 0.14em 0.14em 0 var(--shadow);
@@ -303,9 +302,9 @@ body.bare .paintstage { box-shadow: none; }
 
 <div class="window raised">
   <div class="titlebar">
-    <span class="ic"><svg viewBox="0 0 16 16"><rect width="16" height="16" fill="#000080"/><rect x="3" y="3" width="10" height="10" fill="#FFD400"/></svg></span><span>WALL.bmp - bigsun Paint</span>
+    <span class="ic" id="appIcon"><svg viewBox="0 0 16 16"><rect width="16" height="16" fill="#000080"/><rect x="3" y="3" width="10" height="10" fill="#FFD400"/></svg></span><span>WALL.bmp - bigsun Paint</span>
     <span class="sp"></span>
-    <span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="#000"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="2" width="10" height="9" fill="#000"/><rect x="4" y="5" width="8" height="5" fill="#c0c0c0"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span>
+    <span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="currentColor"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="3" y="2" width="10" height="3"/><rect x="3" y="5" width="1" height="6"/><rect x="12" y="5" width="1" height="6"/><rect x="3" y="10" width="10" height="1"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span>
   </div>
 
   <div class="menubar">
@@ -322,7 +321,7 @@ body.bare .paintstage { box-shadow: none; }
       <div id="empty">scan the code &rarr; your tag ignites here</div>
 
       <div id="qrPanel" class="hidden">
-        <div class="titlebar"><span>Paint the Wall</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
+        <div class="titlebar"><span>Paint the Wall</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
         <div class="qbody">
           <img id="qrImg" src="/qr.png?size=420" alt="QR code">
           <div class="cap">SCAN &rarr; PAINT THE WALL</div>
@@ -340,6 +339,7 @@ body.bare .paintstage { box-shadow: none; }
   <div class="statusbar">
     <span class="cell grow">For Help, press K</span>
     <span class="cell" id="schemeCell">Eggplant</span>
+    <span class="cell" id="deskCell">Black</span>
     <span class="cell"><span id="dot"></span> <span id="liveTxt">connecting&hellip;</span></span>
     <span class="cell" id="countCell">0 pieces</span>
   </div>
@@ -347,17 +347,17 @@ body.bare .paintstage { box-shadow: none; }
 
 <div class="taskbar">
   <div class="startbtn btnface">
-    <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#f00"/><rect x="9" y="1" width="6" height="6" fill="#0a0"/><rect x="1" y="9" width="6" height="6" fill="#00e"/><rect x="9" y="9" width="6" height="6" fill="#fd0"/></svg>
+    <span class="flagwrap" id="startFlag"><svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#f00"/><rect x="9" y="1" width="6" height="6" fill="#0a0"/><rect x="1" y="9" width="6" height="6" fill="#00e"/><rect x="9" y="9" width="6" height="6" fill="#fd0"/></svg></span>
     Start
   </div>
-  <div class="task">WALL.bmp - bigsun Paint</div>
+  <div class="task"><span class="taskico" id="taskIcon"><svg viewBox="0 0 16 16"><rect width="16" height="16" fill="#000080"/><rect x="3" y="3" width="10" height="10" fill="#FFD400"/></svg></span>WALL.bmp - bigsun Paint</div>
   <span class="sp"></span>
   <div id="tbclock">--:--</div>
 </div>
 
 <div id="wipe">
   <div class="dlg raised">
-    <div class="titlebar"><span>Clear Wall</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
+    <div class="titlebar"><span>Clear Wall</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
     <div class="dbody">
       <p id="wipeMsg" style="margin:0 0 1em;"></p>
       <div style="display:flex; gap:0.6em; justify-content:center;">
@@ -370,7 +370,7 @@ body.bare .paintstage { box-shadow: none; }
 
 <div id="help">
   <div class="dlg raised">
-    <div class="titlebar"><span>Help Topics: bigsun Paint</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
+    <div class="titlebar"><span>Help Topics: bigsun Paint</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
     <div class="dbody">
       <table>
         <tr><td class="k">F</td><td>fullscreen on / off</td></tr>
@@ -380,7 +380,7 @@ body.bare .paintstage { box-shadow: none; }
         <tr><td class="k">T</td><td>show / hide neon title</td></tr>
         <tr><td class="k">I</td><td>show / hide status bar</td></tr>
         <tr><td class="k">G</td><td>glow: full / soft / off</td></tr>
-        <tr><td class="k">B</td><td>brick preview (for testing at home)</td></tr>
+        <tr><td class="k">B</td><td>desktop colour behind the mural: Black / Teal / Blue / Navy / Green / Maroon / Purple / Grey</td></tr>
         <tr><td class="k">X</td><td>clear this screen's saved pieces (see README)</td></tr>
         <tr><td class="k">K</td><td>this help</td></tr>
       </table>
@@ -519,6 +519,28 @@ function setIcon(el, name) {
   img.src = '/icons/' + name + '.png';
 }
 
+
+/* Swap in a custom PNG over whatever markup is already there, keeping the
+   built-in artwork as the fallback if the file isn't present. */
+function swapIcon(el, name, cls) {
+  if (!el) return;
+  var img = new Image();
+  img.onload = function () {
+    el.innerHTML = '';
+    img.className = cls || 'pngicon';
+    img.alt = '';
+    el.appendChild(img);
+  };
+  img.onerror = function () {};
+  img.src = '/icons/' + name + '.png';
+}
+
+(function chromeIcons() {
+  swapIcon(document.getElementById('appIcon'), 'app');
+  swapIcon(document.getElementById('taskIcon'), 'app');
+  swapIcon(document.getElementById('startFlag'), 'start');
+})();
+
 /* the real Paint toolbox, in its original order */
 (function buildToolbox() {
   var order = ['freeform','select','eraser','fill','picker','magnify','pencil','brush',
@@ -548,7 +570,6 @@ function setIcon(el, name) {
 
   function done() {
     if (++settled < order.length || loaded < order.length) return;
-    box.classList.add('custom');
     cells.forEach(function (cell, i) {
       cell.innerHTML = '';
       imgs[i].className = 'pngicon';
@@ -567,8 +588,6 @@ const baked = document.createElement('canvas');   // settled mural, crisp
 const bctx  = baked.getContext('2d');
 const glowC = document.createElement('canvas');   // cached glow of the mural
 const gctx  = glowC.getContext('2d');
-const brick = document.createElement('canvas');   // fake wall for home testing
-const brctx = brick.getContext('2d');
 const small = document.createElement('canvas');   // low-res buffer (glow fallback)
 const sctx  = small.getContext('2d');
 
@@ -590,7 +609,20 @@ const retiring = new Map();   // id -> { start }         ageing out to free a ce
 const RETIRE_MS = 1400;
 
 let glowLevel = 2;            // 2 full, 1 soft, 0 off
-let brickOn   = false;
+/* B cycles the mural background through the stock Windows desktop colours.
+   Black is first because it's the only one that costs no projector light:
+   every other option floods the wall and lifts the blacks. */
+const DESKTOPS = [
+  { name: 'Black',        color: '#000000' },
+  { name: 'Teal (95)',    color: '#008080' },
+  { name: 'Blue (98)',    color: '#3a6ea5' },
+  { name: 'Navy',         color: '#000080' },
+  { name: 'Green',        color: '#008000' },
+  { name: 'Maroon',       color: '#800000' },
+  { name: 'Purple',       color: '#400040' },
+  { name: 'Grey',         color: '#808080' }
+];
+let deskIx = 0;
 let glowDirty = true;
 
 const AGE_FULL_MS  = 22 * 60 * 1000;   // full brightness for this long
@@ -698,31 +730,6 @@ function buildGlow() {
   gctx.globalCompositeOperation = 'source-over';
 }
 
-/* ---------------- brick preview (testing only) ---------------- */
-function buildBrick() {
-  brctx.setTransform(1, 0, 0, 1, 0, 0);
-  brctx.fillStyle = '#241f1c';
-  brctx.fillRect(0, 0, W, H);
-
-  const bh = Math.max(8, Math.round(H / 14));
-  const bw = Math.max(12, Math.round(W / 9));
-  for (let row = 0; row * bh < H; row++) {
-    const off = row % 2 ? bw / 2 : 0;
-    for (let col = -1; col * bw < W + bw; col++) {
-      const x = col * bw + off;
-      // pale painted brick, dimly lit - closer to what the projector actually sits on
-      const tint = 44 + Math.floor(Math.random() * 18);
-      brctx.fillStyle = 'rgb(' + (tint + 16) + ',' + (tint + 11) + ',' + (tint + 4) + ')';
-      brctx.fillRect(x + 2, row * bh + 2, bw - 4, bh - 4);
-    }
-  }
-  const vg = brctx.createRadialGradient(W / 2, H * 0.9, H * 0.1, W / 2, H * 0.9, H * 1.1);
-  vg.addColorStop(0, 'rgba(255,140,40,.10)');
-  vg.addColorStop(1, 'rgba(0,0,0,.45)');
-  brctx.fillStyle = vg;
-  brctx.fillRect(0, 0, W, H);
-}
-
 /* ---------------- frame loop ---------------- */
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
@@ -732,8 +739,8 @@ function frame() {
   if (glowDirty) buildGlow();
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  if (brickOn) ctx.drawImage(brick, 0, 0);
-  else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+  ctx.fillStyle = DESKTOPS[deskIx].color;
+  ctx.fillRect(0, 0, W, H);
 
   if (glowLevel > 0) {
     ctx.globalCompositeOperation = 'lighter';
@@ -920,11 +927,10 @@ function resize() {
   if (w === W && h === H) return;
 
   W = w; H = h;
-  for (const c of [canvas, baked, glowC, brick]) { c.width = W; c.height = H; }
+  for (const c of [canvas, baked, glowC]) { c.width = W; c.height = H; }
   small.width  = Math.max(2, Math.round(W / 6));
   small.height = Math.max(2, Math.round(H / 6));
 
-  buildBrick();
   bakeAll();
 }
 
@@ -943,12 +949,22 @@ addEventListener('keydown', e => {
     case 'q': document.getElementById('qrPanel').classList.toggle('hidden'); break;
     case 't': document.getElementById('neonTitle').classList.toggle('hidden'); break;
     case 'i': document.querySelector('.statusbar').classList.toggle('hidden'); break;
-    case 'b': brickOn = !brickOn; break;
+    case 'b': setDesktop(deskIx + 1); break;
     case 'g': glowLevel = (glowLevel + 2) % 3; glowDirty = true; break;
     case 'x': askWipe(); break;
     case 'k': document.getElementById('help').classList.toggle('show'); break;
   }
 });
+
+/* ---------------- desktop colour ---------------- */
+function setDesktop(ix, remember) {
+  deskIx = ((ix % DESKTOPS.length) + DESKTOPS.length) % DESKTOPS.length;
+  const cell = document.getElementById('deskCell');
+  if (cell) cell.textContent = DESKTOPS[deskIx].name;
+  if (remember !== false) {
+    try { localStorage.setItem('bsw_desk', String(deskIx)); } catch (e) {}
+  }
+}
 
 /* ---------------- clearing the local cache ----------------
    The wall keeps its own copy of the mural so it survives refreshes and
@@ -1005,6 +1021,10 @@ fetch('/url')
   let saved = 0;
   try { saved = parseInt(localStorage.getItem('bsw_scheme'), 10) || 0; } catch (e) {}
   applyScheme(saved, false);
+
+  let savedDesk = 0;
+  try { savedDesk = parseInt(localStorage.getItem('bsw_desk'), 10) || 0; } catch (e) {}
+  setDesktop(savedDesk, false);
 
   tickClock();
   db = await openDB();
