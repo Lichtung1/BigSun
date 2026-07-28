@@ -127,8 +127,8 @@ body.nocursor { cursor: none; }
 
 /* ---------- toolbox (decorative — the spray can is selected) ---------- */
 .toolbox {
-  flex: 0 0 auto; width: 3.6em; padding: 0.22em;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0.14em;
+  flex: 0 0 auto; width: 5em; padding: 0.2em;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.1em;
   align-content: start;
 }
 .tool {
@@ -137,11 +137,17 @@ body.nocursor { cursor: none; }
   box-shadow: inset -0.07em -0.07em 0 var(--dark), inset 0.07em 0.07em 0 var(--light),
               inset -0.14em -0.14em 0 var(--shadow), inset 0.14em 0.14em 0 var(--hilite);
 }
+/* custom PNG icons are fixed bitmaps drawn for a grey toolbar, so the
+   toolbox reverts to classic grey the moment a complete set loads */
+.toolbox.custom .tool { background: #c0c0c0; color: #000; }
+
 .tool.pressed {
   box-shadow: inset 0.07em 0.07em 0 var(--dark), inset -0.07em -0.07em 0 var(--light),
               inset 0.14em 0.14em 0 var(--shadow);
 }
-.tool svg { width: 68%; height: 68%; }
+.tool svg { width: 88%; height: 88%; display: block; }
+.tool .pngicon { width: 88%; height: 88%; display: block; image-rendering: pixelated; }
+.tbtn svg { width: 100%; height: 100%; display: block; }
 
 /* ---------- the mural ---------- */
 .paintstage {
@@ -163,7 +169,7 @@ canvas#wall { position: absolute; inset: 0; width: 100%; height: 100%; display: 
 .fgbg .fg { left: 0; top: 0; background: #FFD400; z-index: 1; }
 .swatches { display: grid; grid-template-rows: 1fr 1fr; grid-auto-flow: column; gap: 0.1em; }
 .swatches i {
-  display: block; width: 1.35em; height: 0.95em;
+  display: block; width: 1.1em; aspect-ratio: 1; height: auto;
   box-shadow: inset 0.07em 0.07em 0 var(--shadow), inset -0.07em -0.07em 0 var(--light);
 }
 
@@ -284,7 +290,7 @@ body.bare .paintstage { box-shadow: none; }
   <div class="titlebar">
     <span class="ic"><svg viewBox="0 0 16 16"><rect width="16" height="16" fill="#000080"/><rect x="3" y="3" width="10" height="10" fill="#FFD400"/></svg></span><span>WALL.bmp - bigsun Paint</span>
     <span class="sp"></span>
-    <span class="tbtn">_</span><span class="tbtn">&#9633;</span><span class="tbtn">&times;</span>
+    <span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="#000"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="2" width="10" height="9" fill="#000"/><rect x="4" y="5" width="8" height="5" fill="#c0c0c0"/></svg></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span>
   </div>
 
   <div class="menubar">
@@ -293,16 +299,7 @@ body.bare .paintstage { box-shadow: none; }
   </div>
 
   <div class="mid">
-    <div class="toolbox raised">
-      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2"><rect x="4" y="5" width="16" height="14"/></svg></div>
-      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19l1-4L16 5l3 3L9 18l-4 1z"/></svg></div>
-      <div class="tool pressed"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="10" y="3" width="4" height="3"/><path d="M9 7h6l2 5H7z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7" cy="16" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="17" cy="16" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
-      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4l6 6-7 7-6-6z"/><path d="M7 11l-3 7 8-3" fill="currentColor"/></svg></div>
-      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10" width="10" height="7" transform="rotate(-20 10 13)"/><path d="M13 8l5 5"/></svg></div>
-      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4c3 4 6 7 6 10a6 6 0 11-12 0c0-3 3-6 6-10z"/></svg></div>
-      <div class="tool"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="5" y1="19" x2="19" y2="5"/></svg></div>
-      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="5"/><line x1="14" y1="14" x2="20" y2="20"/></svg></div>
-    </div>
+    <div class="toolbox raised" id="toolbox"></div>
 
     <div class="paintstage">
       <canvas id="wall"></canvas>
@@ -310,7 +307,7 @@ body.bare .paintstage { box-shadow: none; }
       <div id="empty">scan the code &rarr; your tag ignites here</div>
 
       <div id="qrPanel" class="hidden">
-        <div class="titlebar"><span>Paint the Wall</span><span class="sp"></span><span class="tbtn">&times;</span></div>
+        <div class="titlebar"><span>Paint the Wall</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
         <div class="qbody">
           <img id="qrImg" src="/qr.png?size=420" alt="QR code">
           <div class="cap">SCAN &rarr; PAINT THE WALL</div>
@@ -345,7 +342,7 @@ body.bare .paintstage { box-shadow: none; }
 
 <div id="wipe">
   <div class="dlg raised">
-    <div class="titlebar"><span>Clear Wall</span><span class="sp"></span><span class="tbtn">&times;</span></div>
+    <div class="titlebar"><span>Clear Wall</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
     <div class="dbody">
       <p id="wipeMsg" style="margin:0 0 1em;"></p>
       <div style="display:flex; gap:0.6em; justify-content:center;">
@@ -358,7 +355,7 @@ body.bare .paintstage { box-shadow: none; }
 
 <div id="help">
   <div class="dlg raised">
-    <div class="titlebar"><span>Help Topics: bigsun Paint</span><span class="sp"></span><span class="tbtn">&times;</span></div>
+    <div class="titlebar"><span>Help Topics: bigsun Paint</span><span class="sp"></span><span class="tbtn"><svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg></span></div>
     <div class="dbody">
       <table>
         <tr><td class="k">F</td><td>fullscreen on / off</td></tr>
@@ -388,6 +385,163 @@ body.bare .paintstage { box-shadow: none; }
    Resilience: the whole mural is mirrored in IndexedDB, so a
    refresh, a crash, or a server restart never loses the wall.
    ================================================================ */
+
+/* ---------------- Windows 95 pixel icons ----------------
+   Each icon is a 16x16 grid, one character per pixel, rendered to SVG rects
+   with crisp edges - the same way the originals were drawn by hand. */
+var PAL = { k:'#000000', w:'#ffffff', g:'#808080', l:'#c0c0c0', s:'#dfdfdf',
+            d:'#404040', y:'#ffff00', r:'#ff0000', b:'#0000ff', n:'#000080',
+            t:'#008080', p:'#ff00ff', o:'#808000', e:'#00a800', c:'#00ffff' };
+
+function pxIcon(rows, size) {
+  var out = '<svg viewBox="0 0 16 16" shape-rendering="crispEdges"' +
+            (size ? ' width="' + size + '" height="' + size + '"' : '') + '>';
+  for (var y = 0; y < rows.length; y++) {
+    var row = rows[y], x = 0;
+    while (x < row.length) {
+      var ch = row[x];
+      if (ch === '.') { x++; continue; }
+      var run = 1;
+      while (x + run < row.length && row[x + run] === ch) run++;
+      var fill = (ch === 'k') ? 'currentColor' : (PAL[ch] || 'currentColor');
+      out += '<rect x="' + x + '" y="' + y + '" width="' + run + '" height="1" fill="' + fill + '"/>';
+      x += run;
+    }
+  }
+  return out + '</svg>';
+}
+
+var ICONS = {
+  freeform: ['................','.....kk.kk......','...kk.....kk....','..k.........k...',
+             '.k...........k..','.k...........k..','k.............k.','k.............k.',
+             '.k...........k..','.k...........k..','..k.........k...','...kk.....kk....',
+             '.....kk.kk......','................','................','................'],
+  select:   ['................','.kk.kk.kk.kk.kk.','.k............k.','.k............k.',
+             '..............k.','.k..............','.k............k.','.k............k.',
+             '..............k.','.k..............','.k............k.','.kk.kk.kk.kk.kk.',
+             '................','................','................','................'],
+  eraser:   ['................','..........kkkk..','.........kwwwk..','........kwwwwk..',
+             '.......kwwwwwk..','......kwwwwwkk..','.....kwwwwwkg...','....kwwwwwkg....',
+             '...kwwwwwkg.....','..kwwwwwkg......','..kwwwwkg.......','..kkkkkg........',
+             '................','................','................','................'],
+  fill:     ['................','.......k........','......kwk.......','.....kwwwk......',
+             '....kwwwwwk.....','...kwwwwwwwk....','..kwwwwwwwwwk...','..kkwwwwwwwkk...',
+             '...kkwwwwwkk....','....kkwwwkk.....','.....kkwkk......','......kkk.......',
+             '.............b..','............bbb.','.............b..','................'],
+  picker:   ['................','.............kk.','............kkkk','...........kkkk.',
+             '..........kkkk..','.........kkk....','........kkk.....','.......kkk......',
+             '......kkk.......','.....kkk........','....kkk.........','...kkw..........',
+             '..kkw...........','..kw............','..k.............','................'],
+  magnify:  ['................','....kkkk........','...kwwwwk.......','..kwwwwwwk......',
+             '..kwwwwwwk......','..kwwwwwwk......','..kwwwwwwk......','...kwwwwk.......',
+             '....kkkk.kk.....','..........kk....','...........kk...','............kk..',
+             '.............k..','................','................','................'],
+  pencil:   ['................','............kk..','...........kyyk.','..........kyykk.',
+             '.........kyyk...','........kyyk....','.......kyyk.....','......kyyk......',
+             '.....kyyk.......','....kyyk........','...kyyk.........','..kwyk..........',
+             '..kwk...........','..kk............','................','................'],
+  brush:    ['................','............kkk.','...........koook','..........kookk.',
+             '.........kook...','........kook....','.......kook.....','......kkkk......',
+             '.....kkkk.......','....kkkk........','...kkkk.........','...kkk..........',
+             '....k...........','................','................','................'],
+  airbrush: ['................','..........k.k...','............k...','.........k...k..',
+             '....kk..........','...kllk...k.....','...kllk.........','..kllllk........',
+             '..kllllk........','..kllllk........','..kllllk........','..kllllk........',
+             '..kllllk........','..kkkkkk........','................','................'],
+  text:     ['................','......kk........','......kk........','.....kkkk.......',
+             '.....k..k.......','.....k..k.......','....kkkkkk......','....k....k......',
+             '....k....k......','...kk....kk.....','................','................',
+             '................','................','................','................'],
+  line:     ['................','.............k..','............k...','...........k....',
+             '..........k.....','.........k......','........k.......','.......k........',
+             '......k.........','.....k..........','....k...........','...k............',
+             '..k.............','................','................','................'],
+  curve:    ['................','.........kkk....','........k...k...','.......k.....k..',
+             '.......k......k.','......k.........','.....k..........','....k...........',
+             '...k............','..k.............','..k.............','...k............',
+             '....kk..........','................','................','................'],
+  rect:     ['................','................','..kkkkkkkkkkk...','..k.........k...',
+             '..k.........k...','..k.........k...','..k.........k...','..k.........k...',
+             '..k.........k...','..kkkkkkkkkkk...','................','................',
+             '................','................','................','................'],
+  polygon:  ['................','......kkk.......','.....k...kk.....','....k......kk...',
+             '...k.........k..','..k..........k..','..k.........k...','...k.......k....',
+             '....k....kk.....','.....kkkk.......','................','................',
+             '................','................','................','................'],
+  ellipse:  ['................','.....kkkkk......','...kk.....kk....','..k.........k...',
+             '.k...........k..','.k...........k..','.k...........k..','..k.........k...',
+             '...kk.....kk....','.....kkkkk......','................','................',
+             '................','................','................','................'],
+  roundrect:['................','...kkkkkkkkk....','..k.........k...','..k.........k...',
+             '..k.........k...','..k.........k...','..k.........k...','..k.........k...',
+             '...kkkkkkkkk....','................','................','................',
+             '................','................','................','................'],
+  undo:     ['................','....k...........','...kk...........','..kkkkkkkk......',
+             '.kkkkkkkkkkk....','..kkkkkkkkkkk...','...kk......kk...','....k.......k...',
+             '............k...','...........kk...','..........kk....','................',
+             '................','................','................','................'],
+  trash:    ['................','......kkkk......','................','...kkkkkkkkkk...',
+             '................','....kkkkkkkk....','....k.k..k.k....','....k.k..k.k....',
+             '....k.k..k.k....','....k.k..k.k....','....k.k..k.k....','....kkkkkkkk....',
+             '................','................','................','................']
+};
+
+
+/* ---------------- custom icon loading ----------------
+   Drop a PNG into public/icons/ and it replaces the drawn icon here.
+   Anything missing silently falls back, so you can add them one at a time. */
+function setIcon(el, name) {
+  if (!el) return;
+  el.innerHTML = pxIcon(ICONS[name]);          // fallback, shown immediately
+  var img = new Image();
+  img.onload = function () {
+    el.innerHTML = '';
+    img.className = 'pngicon';
+    img.alt = '';
+    el.appendChild(img);
+  };
+  img.onerror = function () {};                 // keep the drawn one
+  img.src = '/icons/' + name + '.png';
+}
+
+/* the real Paint toolbox, in its original order */
+(function buildToolbox() {
+  var order = ['freeform','select','eraser','fill','picker','magnify','pencil','brush',
+               'airbrush','text','line','curve','rect','polygon','ellipse','roundrect'];
+  var box = document.getElementById('toolbox');
+  if (!box) return;
+
+  var cells = order.map(function (name) {
+    var d = document.createElement('div');
+    d.className = 'tool' + (name === 'airbrush' ? ' pressed' : '');
+    d.innerHTML = pxIcon(ICONS[name]);
+    box.appendChild(d);
+    return d;
+  });
+
+  /* All sixteen or none. The phone shares three of these files, so loading
+     them piecemeal would leave the wall's toolbox half one style and half
+     another. Only swap in the custom set once it's complete. */
+  var loaded = 0, settled = 0;
+  var imgs = order.map(function (name) {
+    var img = new Image();
+    img.onload  = function () { loaded++; done(); };
+    img.onerror = function () { done(); };
+    img.src = '/icons/' + name + '.png';
+    return img;
+  });
+
+  function done() {
+    if (++settled < order.length || loaded < order.length) return;
+    box.classList.add('custom');
+    cells.forEach(function (cell, i) {
+      cell.innerHTML = '';
+      imgs[i].className = 'pngicon';
+      imgs[i].alt = '';
+      cell.appendChild(imgs[i]);
+    });
+  }
+})();
 
 /* ---------------- canvases ---------------- */
 const stage  = document.querySelector('.paintstage');
@@ -720,7 +874,12 @@ function tickClock() {
 })();
 
 /* ---------------- socket ---------------- */
-const socket = io({ auth: { role: 'wall' } });
+/* If socket.io can't load (page opened as a file, or the server is down) the
+   rest of this script still has to run - the clock, the canvas and the saved
+   mural all work offline. A dead stub keeps everything alive. */
+const socket = (typeof io === 'function')
+  ? io({ auth: { role: 'wall' } })
+  : { on: function () {}, emit: function () {}, connect: function () {}, disconnect: function () {} };
 
 socket.on('connect',     () => { connected = true;  updateChrome(); });
 socket.on('disconnect',  () => { connected = false; updateChrome(); });

@@ -62,9 +62,12 @@
   }
   .tbar .ttl{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tbtn{
-    width:22px; height:20px; min-height:20px; padding:0;
-    font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,sans-serif; font-size:11px; font-weight:bold; line-height:18px;
+    width:24px; height:21px; min-height:21px; padding:0;
+    display:flex; align-items:center; justify-content:center;
   }
+  .tbtn svg{ display:block; width:100%; height:100%; }
+  .tool svg{ display:block; width:32px; height:32px; image-rendering:pixelated; }
+  .tool .pngicon{ display:block; width:32px; height:32px; image-rendering:pixelated; }
   .menu{ display:flex; gap:2px; padding:3px 4px 2px; }
   .menu span{ padding:3px 8px; }
   .menu span.live:active{ background:var(--navy1); color:#fff; }
@@ -76,8 +79,9 @@
     width:66px; display:flex; flex-direction:column; gap:4px; padding:3px 2px;
   }
   .toolgrid{ display:grid; grid-template-columns:1fr 1fr; gap:3px; }
-  .tool{ height:40px; min-height:40px; padding:0; display:flex; align-items:center; justify-content:center; }
-  .tool svg{ width:22px; height:22px; }
+  .tool{ height:44px; min-height:44px; padding:0; display:flex; align-items:center; justify-content:center; }
+  .tool svg,
+  .tool .pngicon{ display:block; width:32px; height:32px; image-rendering:pixelated; }
   .sizes{ margin-top:2px; padding:5px 3px; display:flex; flex-direction:column; gap:4px; background:#fff;
     box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); }
   .size{ height:30px; min-height:30px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--face); }
@@ -107,14 +111,15 @@
 
   /* ---------- colors ---------- */
   .colors{ display:flex; align-items:center; gap:6px; padding:5px 6px 3px; }
-  .cur{ position:relative; width:44px; height:38px; flex:0 0 auto; background:var(--face);
+  .cur{ position:relative; width:42px; height:42px; flex:0 0 auto; background:var(--face);
     box-shadow: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi); }
-  .cur .fg{ position:absolute; left:6px; top:5px; width:22px; height:18px; background:var(--sun);
+  .cur .fg{ position:absolute; left:5px; top:5px; width:20px; height:20px; background:var(--sun);
     box-shadow: inset 1px 1px 0 var(--dk), 0 0 0 1px var(--hi); z-index:2; }
-  .cur .bg{ position:absolute; right:5px; bottom:4px; width:22px; height:18px; background:#16141b;
+  .cur .bg{ position:absolute; right:5px; bottom:5px; width:20px; height:20px; background:#16141b;
     box-shadow: inset 1px 1px 0 var(--dk), 0 0 0 1px var(--hi); }
-  .swatches{ flex:1; display:grid; grid-template-columns:repeat(8,1fr); gap:3px; }
-  .sw{ height:26px; min-height:26px; padding:0; border:0; cursor:pointer;
+  .swatches{ flex:1; max-width:min(100%, 392px); display:grid;
+    grid-template-columns:repeat(8,1fr); gap:3px; }
+  .sw{ aspect-ratio:1; height:auto; min-height:0; padding:0; border:0; cursor:pointer;
     box-shadow: inset 1px 1px 0 rgba(0,0,0,.55), inset -1px -1px 0 rgba(255,255,255,.5); }
   .sw.on{ outline:2px dotted #000; outline-offset:-4px; }
 
@@ -190,9 +195,9 @@
     <div class="tbar">
       <span class="wico"><svg viewBox="0 0 16 16"><rect width="16" height="16" fill="#000080"/><rect x="3" y="3" width="10" height="10" fill="#FFD400"/></svg></span>
       <span class="ttl">bigsun - Paint</span>
-      <button class="btn tbtn" id="btnMin" aria-label="Minimize">_</button>
-      <button class="btn tbtn" aria-label="Maximize">□</button>
-      <button class="btn tbtn" id="btnX" aria-label="Close">×</button>
+      <button class="btn tbtn" id="btnMin" aria-label="Minimize"></button>
+      <button class="btn tbtn" id="btnMax" aria-label="Maximize"></button>
+      <button class="btn tbtn" id="btnX" aria-label="Close"></button>
     </div>
 
     <div class="menu">
@@ -203,36 +208,11 @@
     <div class="main">
       <div class="tools">
         <div class="toolgrid">
-          <button class="btn tool" id="tSpray" title="Airbrush" aria-label="Airbrush">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
-              <rect x="8" y="8" width="8" height="13" rx="1" fill="#c0c0c0"/>
-              <rect x="10" y="4" width="4" height="4" fill="#000"/>
-              <path d="M16 5h2M17 8h3M16 11h2" stroke-linecap="round"/>
-              <circle cx="21" cy="5" r=".8" fill="#000" stroke="none"/>
-              <circle cx="22" cy="9" r=".8" fill="#000" stroke="none"/>
-            </svg>
-          </button>
-          <button class="btn tool on" id="tBrush" title="Brush" aria-label="Brush">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
-              <path d="M4 20c1-4 3-4 5-6L17 6l2 2-8 8c-2 2-2 4-7 4z" fill="#c0c0c0"/>
-              <path d="M16 5l3 3" stroke-width="2"/>
-            </svg>
-          </button>
-          <button class="btn tool" id="tErase" title="Eraser" aria-label="Eraser">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
-              <rect x="5" y="10" width="12" height="8" transform="rotate(-20 11 14)" fill="#fff"/>
-            </svg>
-          </button>
-          <button class="btn tool" id="tUndo" title="Undo" aria-label="Undo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 9h9a5 5 0 0 1 0 10h-4"/><path d="M8 4L3 9l5 5"/>
-            </svg>
-          </button>
-          <button class="btn tool" id="tClear" title="Clear all" aria-label="Clear all">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.6">
-              <path d="M8 6V4h8v2M5 6h14M7 6l1 14h8l1-14" fill="#c0c0c0"/>
-            </svg>
-          </button>
+          <button class="btn tool" id="tSpray" title="Airbrush" aria-label="Airbrush"></button>
+          <button class="btn tool on" id="tBrush" title="Brush" aria-label="Brush"></button>
+          <button class="btn tool" id="tErase" title="Eraser" aria-label="Eraser"></button>
+          <button class="btn tool" id="tUndo" title="Undo" aria-label="Undo"></button>
+          <button class="btn tool" id="tClear" title="Clear all" aria-label="Clear all"></button>
         </div>
         <div class="sizes">
           <button class="btn size s1 on" data-s="0" aria-label="Small nozzle"><i></i></button>
@@ -365,6 +345,142 @@
   window.addEventListener('orientationchange', function(){ setTimeout(sizeCanvas, 250); });
   if (window.ResizeObserver) new ResizeObserver(function(){ sizeCanvas(); }).observe(stage);
   sizeCanvas();
+
+/* ---------------- Windows 95 pixel icons ----------------
+   Each icon is a 16x16 grid, one character per pixel, rendered to SVG rects
+   with crisp edges - the same way the originals were drawn by hand. */
+var PAL = { k:'#000000', w:'#ffffff', g:'#808080', l:'#c0c0c0', s:'#dfdfdf',
+            d:'#404040', y:'#ffff00', r:'#ff0000', b:'#0000ff', n:'#000080',
+            t:'#008080', p:'#ff00ff', o:'#808000', e:'#00a800', c:'#00ffff' };
+
+function pxIcon(rows, size) {
+  var out = '<svg viewBox="0 0 16 16" shape-rendering="crispEdges"' +
+            (size ? ' width="' + size + '" height="' + size + '"' : '') + '>';
+  for (var y = 0; y < rows.length; y++) {
+    var row = rows[y], x = 0;
+    while (x < row.length) {
+      var ch = row[x];
+      if (ch === '.') { x++; continue; }
+      var run = 1;
+      while (x + run < row.length && row[x + run] === ch) run++;
+      var fill = (ch === 'k') ? 'currentColor' : (PAL[ch] || 'currentColor');
+      out += '<rect x="' + x + '" y="' + y + '" width="' + run + '" height="1" fill="' + fill + '"/>';
+      x += run;
+    }
+  }
+  return out + '</svg>';
+}
+
+var ICONS = {
+  freeform: ['................','.....kk.kk......','...kk.....kk....','..k.........k...',
+             '.k...........k..','.k...........k..','k.............k.','k.............k.',
+             '.k...........k..','.k...........k..','..k.........k...','...kk.....kk....',
+             '.....kk.kk......','................','................','................'],
+  select:   ['................','.kk.kk.kk.kk.kk.','.k............k.','.k............k.',
+             '..............k.','.k..............','.k............k.','.k............k.',
+             '..............k.','.k..............','.k............k.','.kk.kk.kk.kk.kk.',
+             '................','................','................','................'],
+  eraser:   ['................','..........kkkk..','.........kwwwk..','........kwwwwk..',
+             '.......kwwwwwk..','......kwwwwwkk..','.....kwwwwwkg...','....kwwwwwkg....',
+             '...kwwwwwkg.....','..kwwwwwkg......','..kwwwwkg.......','..kkkkkg........',
+             '................','................','................','................'],
+  fill:     ['................','.......k........','......kwk.......','.....kwwwk......',
+             '....kwwwwwk.....','...kwwwwwwwk....','..kwwwwwwwwwk...','..kkwwwwwwwkk...',
+             '...kkwwwwwkk....','....kkwwwkk.....','.....kkwkk......','......kkk.......',
+             '.............b..','............bbb.','.............b..','................'],
+  picker:   ['................','.............kk.','............kkkk','...........kkkk.',
+             '..........kkkk..','.........kkk....','........kkk.....','.......kkk......',
+             '......kkk.......','.....kkk........','....kkk.........','...kkw..........',
+             '..kkw...........','..kw............','..k.............','................'],
+  magnify:  ['................','....kkkk........','...kwwwwk.......','..kwwwwwwk......',
+             '..kwwwwwwk......','..kwwwwwwk......','..kwwwwwwk......','...kwwwwk.......',
+             '....kkkk.kk.....','..........kk....','...........kk...','............kk..',
+             '.............k..','................','................','................'],
+  pencil:   ['................','............kk..','...........kyyk.','..........kyykk.',
+             '.........kyyk...','........kyyk....','.......kyyk.....','......kyyk......',
+             '.....kyyk.......','....kyyk........','...kyyk.........','..kwyk..........',
+             '..kwk...........','..kk............','................','................'],
+  brush:    ['................','............kkk.','...........koook','..........kookk.',
+             '.........kook...','........kook....','.......kook.....','......kkkk......',
+             '.....kkkk.......','....kkkk........','...kkkk.........','...kkk..........',
+             '....k...........','................','................','................'],
+  airbrush: ['................','..........k.k...','............k...','.........k...k..',
+             '....kk..........','...kllk...k.....','...kllk.........','..kllllk........',
+             '..kllllk........','..kllllk........','..kllllk........','..kllllk........',
+             '..kllllk........','..kkkkkk........','................','................'],
+  text:     ['................','......kk........','......kk........','.....kkkk.......',
+             '.....k..k.......','.....k..k.......','....kkkkkk......','....k....k......',
+             '....k....k......','...kk....kk.....','................','................',
+             '................','................','................','................'],
+  line:     ['................','.............k..','............k...','...........k....',
+             '..........k.....','.........k......','........k.......','.......k........',
+             '......k.........','.....k..........','....k...........','...k............',
+             '..k.............','................','................','................'],
+  curve:    ['................','.........kkk....','........k...k...','.......k.....k..',
+             '.......k......k.','......k.........','.....k..........','....k...........',
+             '...k............','..k.............','..k.............','...k............',
+             '....kk..........','................','................','................'],
+  rect:     ['................','................','..kkkkkkkkkkk...','..k.........k...',
+             '..k.........k...','..k.........k...','..k.........k...','..k.........k...',
+             '..k.........k...','..kkkkkkkkkkk...','................','................',
+             '................','................','................','................'],
+  polygon:  ['................','......kkk.......','.....k...kk.....','....k......kk...',
+             '...k.........k..','..k..........k..','..k.........k...','...k.......k....',
+             '....k....kk.....','.....kkkk.......','................','................',
+             '................','................','................','................'],
+  ellipse:  ['................','.....kkkkk......','...kk.....kk....','..k.........k...',
+             '.k...........k..','.k...........k..','.k...........k..','..k.........k...',
+             '...kk.....kk....','.....kkkkk......','................','................',
+             '................','................','................','................'],
+  roundrect:['................','...kkkkkkkkk....','..k.........k...','..k.........k...',
+             '..k.........k...','..k.........k...','..k.........k...','..k.........k...',
+             '...kkkkkkkkk....','................','................','................',
+             '................','................','................','................'],
+  undo:     ['................','....k...........','...kk...........','..kkkkkkkk......',
+             '.kkkkkkkkkkk....','..kkkkkkkkkkk...','...kk......kk...','....k.......k...',
+             '............k...','...........kk...','..........kk....','................',
+             '................','................','................','................'],
+  clear:    ['................','......kkkk......','................','...kkkkkkkkkk...',
+             '................','....kkkkkkkk....','....k.k..k.k....','....k.k..k.k....',
+             '....k.k..k.k....','....k.k..k.k....','....k.k..k.k....','....kkkkkkkk....',
+             '................','................','................','................']
+};
+
+
+/* ---------------- custom icon loading ----------------
+   Drop a PNG into public/icons/ and it replaces the drawn icon here.
+   Anything missing silently falls back, so you can add them one at a time. */
+function setIcon(el, name) {
+  if (!el) return;
+  el.innerHTML = pxIcon(ICONS[name]);          // fallback, shown immediately
+  var img = new Image();
+  img.onload = function () {
+    el.innerHTML = '';
+    img.className = 'pngicon';
+    img.alt = '';
+    el.appendChild(img);
+  };
+  img.onerror = function () {};                 // keep the drawn one
+  img.src = '/icons/' + name + '.png';
+}
+
+  (function paintIcons() {
+    var map = { tSpray:'airbrush', tBrush:'brush', tErase:'eraser',
+                tUndo:'undo', tClear:'clear' };
+    Object.keys(map).forEach(function (id) {
+      setIcon(document.getElementById(id), map[id]);
+    });
+    var tb = { btnMin:'min', btnMax:'max', btnX:'close' };
+    var glyph = {
+      min:   '<svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="#000"/></svg>',
+      max:   '<svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="2" width="10" height="9" fill="#000"/><rect x="4" y="5" width="8" height="5" fill="#c0c0c0"/></svg>',
+      close: '<svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000"><rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="6" y="5" width="4" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/></svg>'
+    };
+    Object.keys(tb).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = glyph[tb[id]];
+    });
+  })();
 
   /* ================= tools & colors ================= */
   const SPRAY_R  = [9, 16, 26];   // css px

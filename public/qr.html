@@ -3,76 +3,163 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bigsun — Print the QR</title>
+<title>bigsun - Print the QR</title>
 <style>
-  :root { --gray: #c0c0c0; --dgray: #808080; --lgray: #dfdfdf; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; background: #008080;
-    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif; font-size: 12px;
-    display: flex; align-items: center; justify-content: center; padding: 16px;
-  }
-  .raised { box-shadow: inset -1px -1px 0 #000, inset 1px 1px 0 #fff, inset -2px -2px 0 var(--dgray), inset 2px 2px 0 var(--lgray); }
-  .window { background: var(--gray); padding: 3px; width: min(94vw, 560px); }
-  .titlebar {
-    background: linear-gradient(90deg, #000080, #1084d0);
-    color: #fff; font-weight: bold; padding: 4px 6px;
-  }
-  .body { padding: 16px; text-align: center; }
-  .qrbox { background: #fff; display: inline-block; padding: 14px; }
-  .qrbox img { display: block; width: min(70vw, 380px); height: auto; }
-  .cap { font-size: 20px; font-weight: bold; letter-spacing: .1em; margin: 14px 0 4px; }
-  .url { color: #333; word-break: break-all; margin-bottom: 14px; }
-  .btn {
-    background: var(--gray); border: 0; font: inherit; cursor: pointer;
-    padding: 8px 22px; min-height: 38px; font-weight: bold;
-    box-shadow: inset -1px -1px 0 #000, inset 1px 1px 0 #fff, inset -2px -2px 0 var(--dgray), inset 2px 2px 0 var(--lgray);
-  }
-  .btn:active { box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #fff, inset 2px 2px 0 var(--dgray); }
-  .note { margin-top: 14px; color: #222; text-align: left; background: #ffffcc; padding: 10px; border: 1px solid #999; }
+/* ============================================================
+   Printable QR poster: a Windows 95 window sitting on the teal
+   desktop. The teal prints too, so the sheet reads as a screen
+   grab rather than a document.
+   ============================================================ */
+:root {
+  --face:   #c0c0c0;
+  --hilite: #dfdfdf;
+  --shadow: #808080;
+  --dark:   #000000;
+  --light:  #ffffff;
+  --teal:   #008080;
+}
+* { box-sizing: border-box; }
 
-  /* ---- print layout: one clean poster sheet ---- */
-  #sheet { display: none; }
-  @media print {
-    body { background: #fff; display: block; padding: 0; }
-    .window { display: none; }
-    #sheet { display: block; text-align: center; padding-top: 8vh; }
-    #sheet img { width: 62vw; max-width: 15cm; }
-    #sheet .cap { font-size: 34pt; font-weight: bold; letter-spacing: .08em; margin: 24pt 0 8pt; font-family: "Courier New", monospace; }
-    #sheet .url { font-size: 14pt; color: #000; }
-  }
+html, body {
+  margin: 0; min-height: 100%;
+  background: var(--teal);
+  font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+  font-size: 12px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+body {
+  display: flex; align-items: center; justify-content: center;
+  padding: 28px 16px;
+}
+
+/* the authentic Win95 raised edge: white / light inside, grey / black outside */
+.raised {
+  box-shadow: inset -1px -1px 0 var(--dark),  inset  1px  1px 0 var(--light),
+              inset -2px -2px 0 var(--shadow), inset  2px  2px 0 var(--hilite);
+}
+.sunken {
+  box-shadow: inset  1px  1px 0 var(--shadow), inset -1px -1px 0 var(--light),
+              inset  2px  2px 0 var(--dark),   inset -2px -2px 0 var(--hilite);
+}
+
+.window { background: var(--face); padding: 3px; width: min(94vw, 560px); }
+
+.titlebar {
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #fff; font-weight: bold;
+  padding: 3px 3px 3px 4px;
+  display: flex; align-items: center; gap: 5px;
+}
+.titlebar .sp { flex: 1; }
+.titlebar .appicon { width: 16px; height: 16px; display: block; }
+
+/* title bar buttons, 16x14 like the real thing */
+.tbtn {
+  width: 16px; height: 14px; background: var(--face); padding: 0; border: 0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset -1px -1px 0 var(--dark),  inset  1px  1px 0 var(--light),
+              inset -2px -2px 0 var(--shadow), inset  2px  2px 0 var(--hilite);
+}
+.tbtn svg { display: block; width: 16px; height: 14px; }
+
+.menubar { display: flex; gap: 2px; padding: 2px 2px 4px; }
+.menubar span { padding: 2px 7px; }
+.menubar u { text-decoration: underline; }
+
+.workspace { padding: 10px; margin: 0 2px 4px; background: var(--face); text-align: center; }
+.qrframe { background: #fff; display: inline-block; padding: 14px; }
+.qrframe img { display: block; width: min(70vw, 360px); height: auto; image-rendering: pixelated; }
+
+.cap { font-weight: bold; font-size: 19px; letter-spacing: .08em; margin: 14px 0 3px; }
+.url { color: #000; margin-bottom: 14px; }
+
+.btn {
+  background: var(--face); border: 0; font: inherit; cursor: pointer;
+  padding: 6px 20px; min-height: 30px; font-weight: bold;
+  box-shadow: inset -1px -1px 0 var(--dark),  inset  1px  1px 0 var(--light),
+              inset -2px -2px 0 var(--shadow), inset  2px  2px 0 var(--hilite);
+}
+.btn:active {
+  box-shadow: inset  1px  1px 0 var(--dark), inset -1px -1px 0 var(--light),
+              inset  2px  2px 0 var(--shadow);
+  padding: 7px 19px 5px 21px;
+}
+
+.statusbar { display: flex; gap: 2px; padding: 0 2px 2px; }
+.statusbar .cell {
+  padding: 3px 7px;
+  box-shadow: inset 1px 1px 0 var(--shadow), inset -1px -1px 0 var(--light);
+}
+.statusbar .grow { flex: 1; }
+
+/* ---------- print: one poster sheet, teal and all ---------- */
+@media print {
+  @page { margin: 12mm; }
+  body { padding: 0; display: block; background: var(--teal); }
+  .window { width: 100%; margin: 0 auto; }
+  .noprint { display: none !important; }
+  .qrframe img { width: 13cm; }
+  .cap { font-size: 30pt; margin-top: 20pt; }
+  .url { font-size: 13pt; }
+}
 </style>
 </head>
 <body>
 
 <div class="window raised">
-  <div class="titlebar">bigsun - Print the QR</div>
-  <div class="body">
-    <div class="qrbox raised"><img src="/qr.png?size=1000" alt="QR code"></div>
+  <div class="titlebar">
+    <svg class="appicon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect width="16" height="16" fill="#000080"/>
+      <rect x="3" y="3" width="10" height="10" fill="#FFD400"/>
+      <rect x="5" y="5" width="6" height="6" fill="#FF9500"/>
+    </svg>
+    <span>bigsun - Print the QR</span>
+    <span class="sp"></span>
+    <button class="tbtn noprint" aria-label="Minimize">
+      <svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="#000"/></svg>
+    </button>
+    <button class="tbtn noprint" aria-label="Maximize">
+      <svg viewBox="0 0 16 14" shape-rendering="crispEdges">
+        <rect x="3" y="2" width="10" height="9" fill="#000"/>
+        <rect x="4" y="5" width="8" height="5" fill="#c0c0c0"/>
+      </svg>
+    </button>
+    <button class="tbtn noprint" aria-label="Close">
+      <svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000">
+        <rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/>
+        <rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/>
+        <rect x="6" y="5" width="4" height="1"/>
+        <rect x="7" y="6" width="2" height="1"/>
+        <rect x="6" y="7" width="4" height="1"/>
+        <rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/>
+        <rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="menubar noprint">
+    <span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>H</u>elp</span>
+  </div>
+
+  <div class="workspace sunken">
+    <div class="qrframe raised"><img src="/qr.png?size=1000" alt="QR code"></div>
     <div class="cap">SCAN &rarr; PAINT THE WALL</div>
     <div class="url" id="url"></div>
-    <button class="btn" onclick="window.print()">Print...</button>
-    <div class="note">
-      <b>Tip:</b> print 3&ndash;4 copies &mdash; tape one to the bar, one to the queue rail,
-      one near the wall. The QR also shows in the corner of the projection itself,
-      but paper works when people are standing side-on to the wall.
-    </div>
+    <button class="btn noprint" onclick="window.print()">Print...</button>
+  </div>
+
+  <div class="statusbar noprint">
+    <span class="cell grow">Ready</span>
+    <span class="cell">bigsun</span>
   </div>
 </div>
 
-<!-- what actually comes out of the printer -->
-<div id="sheet">
-  <img src="/qr.png?size=1000" alt="QR code">
-  <div class="cap">SCAN &rarr; PAINT THE WALL</div>
-  <div class="url" id="url2"></div>
-</div>
-
 <script>
-fetch('/url').then(r => r.text()).then(u => {
-  const t = u.replace(/^https?:\/\//, '');
-  document.getElementById('url').textContent = t;
-  document.getElementById('url2').textContent = t;
-}).catch(() => {});
+fetch('/url')
+  .then(function (r) { return r.text(); })
+  .then(function (u) { document.getElementById('url').textContent = u.replace(/^https?:\/\//, ''); })
+  .catch(function () {});
 </script>
 </body>
 </html>
