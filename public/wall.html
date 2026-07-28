@@ -416,7 +416,9 @@ const supportsFilter = (() => {
 
 /* ---------------- state ---------------- */
 const tags     = new Map();   // id -> { ...tag, img, loaded }
-const igniting = new Map();   // id -> { start, seed }
+const igniting = new Map();   // id -> { start, seed }   arriving
+const retiring = new Map();   // id -> { start }         ageing out to free a cell
+const RETIRE_MS = 1400;
 
 let glowLevel = 2;            // 2 full, 1 soft, 0 off
 let brickOn   = false;
@@ -454,7 +456,7 @@ function applyScheme(ix, remember) {
 function drawTag(g, t, alpha, scaleMul) {
   if (!t.loaded) return;
   const a = t.aspect || 1;
-  const w = t.scale * W * (scaleMul || 1) / Math.sqrt(a);   // equal area, any shape
+  const w = t.scale * W * (scaleMul || 1);   // server fits this to its grid cell
   const h = w * a;
 
   g.save();
@@ -479,7 +481,7 @@ function bakeAll() {
   bctx.clearRect(0, 0, W, H);
   const now = Date.now();
   for (const t of orderedTags()) {
-    if (igniting.has(t.id)) continue;      // still animating — drawn live
+    if (igniting.has(t.id) || retiring.has(t.id)) continue;   // animating — drawn live
     drawTag(bctx, t, ageAlpha(t, now), 1);
   }
   glowDirty = true;
@@ -570,6 +572,24 @@ function frame() {
     ctx.globalCompositeOperation = 'source-over';
   }
   ctx.drawImage(baked, 0, 0);
+
+  // pieces dissolving to free their cell for someone new
+  if (retiring.size) {
+    const rnow = performance.now();
+    for (const [id, an] of retiring) {
+      const t = tags.get(id);
+      if (!t || !t.loaded) { retiring.delete(id); continue; }
+      const p = (rnow - an.start) / RETIRE_MS;
+      if (p >= 1) {
+        retiring.delete(id);
+        tags.delete(id);
+        cacheDel(id);
+        bakeAll();
+        continue;
+      }
+      drawTag(ctx, t, ageAlpha(t, Date.now()) * (1 - p), 1 + p * 0.04);
+    }
+  }
 
   if (!igniting.size) return;
 
@@ -708,7 +728,12 @@ socket.on('wall:meta',   () => {});
 socket.on('wall:batch',  items => items.forEach(t => addTag(t, false)));
 socket.on('wall:done',   () => scheduleBake());
 socket.on('wall:add',    t  => addTag(t, true));
-socket.on('wall:remove', id => removeTag(id));
+socket.on('wall:remove', id => removeTag(id));      // moderator pulled it: instant
+socket.on('wall:retire', id => {                    // aged out: let it dissolve
+  if (!tags.has(id)) return;
+  retiring.set(id, { start: performance.now() });
+  bakeAll();
+});
 
 /* ---------------- layout ----------------
    The canvas fills the Paint window's canvas area, so it's sized from
@@ -770,6 +795,7 @@ function doWipe() {
   wipeEl.classList.remove('show');
   tags.clear();
   igniting.clear();
+  retiring.clear();
   try {
     if (db) db.transaction('tags', 'readwrite').objectStore('tags').clear();
   } catch (e) {}

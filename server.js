@@ -66,40 +66,70 @@ setInterval(() => {
   for (const [k, v] of lastSend) if (v < cutoff) lastSend.delete(k);
 }, 60 * 60 * 1000);
 
-/* ---------------- placement ----------------
-   The server decides where each approved piece lands so the mural spreads
-   across the wall instead of piling up. Coordinates are 0..1 fractions of
-   the projected area.
+/* ---------------- placement: the slot grid ----------------
+   The wall is divided into a grid of invisible cells and each piece is fitted
+   inside one. Because every piece is scaled to sit within its own cell, two
+   pieces can never overlap - it is guaranteed by the layout, not left to luck.
 
-   RESERVE_QR_CORNER: set true only if you turn the on-wall QR panel back on
-   (the Q key on the wall page). Left false, pieces use the whole wall. */
+   GRID_COLS x GRID_ROWS is the only dial that matters:
+     more cells  = smaller pieces, more of them on screen at once
+     fewer cells = bigger, bolder pieces that turn over faster
+   On a very large projection, raise these. 6 x 4 = 24 pieces at a time.
+
+   When every cell is taken, the oldest piece retires to make room, so the
+   wall keeps moving all night instead of freezing once it fills. */
+const GRID_COLS = 6;
+const GRID_ROWS = 4;
+const SLOTS = GRID_COLS * GRID_ROWS;
+
+const CELL_FILL = 0.86;   // fraction of a cell a piece may occupy (leaves gutters)
+const WALL_AR = 16 / 9;   // assumed projector shape, for width<->height maths
+
+/* set true only if you turn the on-wall QR panel back on (Q on the wall page) */
 const RESERVE_QR_CORNER = false;
 
-function assignPlacement(aspect) {
-  /* `scale` is an area measure, not a width: the wall divides it by
-     sqrt(aspect) so tall and wide pieces end up equally prominent. */
-  const scale = 0.16 + Math.random() * 0.12;
+function slotIsUsable(i) {
+  if (!RESERVE_QR_CORNER) return true;
+  return !(i % GRID_COLS === GRID_COLS - 1 && Math.floor(i / GRID_COLS) === GRID_ROWS - 1);
+}
+
+/* Choose a cell: prefer an empty one, otherwise retire the oldest piece. */
+function pickSlot() {
+  const used = new Set(approved.map(t => t.slot));
+  const free = [];
+  for (let i = 0; i < SLOTS; i++) if (!used.has(i) && slotIsUsable(i)) free.push(i);
+  if (free.length) return { slot: free[Math.floor(Math.random() * free.length)], retire: null };
+  const oldest = approved[0];
+  return { slot: oldest.slot, retire: oldest.id };
+}
+
+function assignPlacement(aspect, slot) {
   const a = aspect || 1;
-  const wFrac = scale / Math.sqrt(a);
-  const hFrac = Math.min(0.8, wFrac * a * (16 / 9));
-  const yMin = 0.05 + hFrac / 2;
-  const yMax = Math.max(yMin + 0.01, 0.90 - hFrac / 2);
-  const recent = approved.slice(-14);
-  let best = null, bestScore = -1;
-  for (let i = 0; i < 12; i++) {
-    const x = 0.06 + Math.random() * 0.88;
-    const y = yMin + Math.random() * (yMax - yMin);
-    if (RESERVE_QR_CORNER && x > 0.76 && y > 0.62) continue;
-    let d = 9;
-    for (const r of recent) d = Math.min(d, (x - r.x) ** 2 + (y - r.y) ** 2);
-    if (d > bestScore) { bestScore = d; best = { x, y }; }
-  }
-  if (!best) best = { x: 0.2 + Math.random() * 0.5, y: 0.2 + Math.random() * 0.5 };
+  const cellW = 1 / GRID_COLS;
+  const cellH = 1 / GRID_ROWS;
+
+  /* Fit the piece inside its cell: cap by cell width, and by cell height
+     once the image's own proportions are taken into account. */
+  const byWidth  = CELL_FILL * cellW;
+  const byHeight = CELL_FILL * cellH / (a * WALL_AR);
+  const wFrac = Math.min(byWidth, byHeight);
+  const hFrac = wFrac * a * WALL_AR;
+
+  /* Drift inside whatever room is left over, so the grid never reads as a grid */
+  const col = slot % GRID_COLS;
+  const row = Math.floor(slot / GRID_COLS);
+  const slackX = Math.max(0, cellW - wFrac) * 0.5;
+  const slackY = Math.max(0, cellH - hFrac) * 0.5;
+
+  const x = (col + 0.5) * cellW + (Math.random() * 2 - 1) * slackX;
+  const y = (row + 0.5) * cellH + (Math.random() * 2 - 1) * slackY;
+
   return {
-    x: +best.x.toFixed(4),
-    y: +best.y.toFixed(4),
-    rot: +(Math.random() * 14 - 7).toFixed(2),
-    scale: +scale.toFixed(3)
+    slot: slot,
+    x: +x.toFixed(4),
+    y: +y.toFixed(4),
+    rot: +(Math.random() * 8 - 4).toFixed(2),
+    scale: +wFrac.toFixed(4)      // width as a fraction of the wall
   };
 }
 
@@ -225,7 +255,16 @@ io.on('connection', socket => {
       const i = pending.findIndex(p => p.id === id);
       if (i === -1) return;
       const item = pending.splice(i, 1)[0];
-      const tag = { ...item, ...assignPlacement(item.aspect), approvedAt: Date.now() };
+
+      // free a cell if the wall is full: the oldest piece fades out
+      const { slot, retire } = pickSlot();
+      if (retire !== null) {
+        approved = approved.filter(t => t.id !== retire);
+        io.to('wall').emit('wall:retire', retire);
+        io.to('mods').emit('approved:remove', retire);
+      }
+
+      const tag = { ...item, ...assignPlacement(item.aspect, slot), approvedAt: Date.now() };
       approved.push(tag);
       if (approved.length > MAX_APPROVED) approved = approved.slice(-MAX_APPROVED);
       io.to('wall').emit('wall:add', tag);
