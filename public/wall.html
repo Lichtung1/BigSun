@@ -70,7 +70,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
 body {
   background: var(--desktop);
   color: var(--text);
-  font-family: Tahoma, "MS Sans Serif", Geneva, sans-serif;
+  font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
   /* everything scales off this, so the chrome reads from across the park */
   font-size: clamp(12px, 2.05vh, 30px);
   display: flex; flex-direction: column;
@@ -108,6 +108,8 @@ body.nocursor { cursor: none; }
   letter-spacing: 0.02em;
 }
 .titlebar .sp { flex: 1; }
+.titlebar .ic { display:flex; }
+.titlebar .ic svg { width: 1em; height: 1em; display:block; }
 
 .tbtn {
   background: var(--face); color: var(--text); font-weight: bold;
@@ -172,8 +174,8 @@ canvas#wall { position: absolute; inset: 0; width: 100%; height: 100%; display: 
   box-shadow: inset 0.07em 0.07em 0 var(--shadow), inset -0.07em -0.07em 0 var(--light);
 }
 .statusbar .grow { flex: 1; }
-#dot { color: #d00; }
-#dot.ok { color: #0a0; }
+#dot { display:inline-block; width:0.6em; height:0.6em; border-radius:50%; background:#d00; }
+#dot.ok { background:#0a0; }
 
 /* ---------- taskbar ---------- */
 .taskbar {
@@ -261,9 +263,9 @@ body.bare .paintstage { box-shadow: none; }
 
 <div class="window raised">
   <div class="titlebar">
-    <span>&#127774; WALL.bmp &mdash; bigsun Paint</span>
+    <span class="ic"><svg viewBox="0 0 16 16"><rect width="16" height="16" fill="#000080"/><rect x="3" y="3" width="10" height="10" fill="#FFD400"/></svg></span><span>WALL.bmp - bigsun Paint</span>
     <span class="sp"></span>
-    <span class="tbtn">_</span><span class="tbtn">&#9633;</span><span class="tbtn">&#10005;</span>
+    <span class="tbtn">_</span><span class="tbtn">&#9633;</span><span class="tbtn">&times;</span>
   </div>
 
   <div class="menubar">
@@ -288,8 +290,8 @@ body.bare .paintstage { box-shadow: none; }
       <div id="neonTitle">BIG SUN WALL</div>
       <div id="empty">scan the code &rarr; your tag ignites here</div>
 
-      <div id="qrPanel">
-        <div class="titlebar"><span>&#127774; Paint the Wall</span><span class="sp"></span><span class="tbtn">&#10005;</span></div>
+      <div id="qrPanel" class="hidden">
+        <div class="titlebar"><span>Paint the Wall</span><span class="sp"></span><span class="tbtn">&times;</span></div>
         <div class="qbody">
           <img id="qrImg" src="/qr.png?size=420" alt="QR code">
           <div class="cap">SCAN &rarr; PAINT THE WALL</div>
@@ -307,7 +309,7 @@ body.bare .paintstage { box-shadow: none; }
   <div class="statusbar">
     <span class="cell grow">For Help, press K</span>
     <span class="cell" id="schemeCell">Eggplant</span>
-    <span class="cell"><span id="dot">&#11044;</span> <span id="liveTxt">connecting&hellip;</span></span>
+    <span class="cell"><span id="dot"></span> <span id="liveTxt">connecting&hellip;</span></span>
     <span class="cell" id="countCell">0 pieces</span>
   </div>
 </div>
@@ -317,20 +319,20 @@ body.bare .paintstage { box-shadow: none; }
     <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" fill="#f00"/><rect x="9" y="1" width="6" height="6" fill="#0a0"/><rect x="1" y="9" width="6" height="6" fill="#00e"/><rect x="9" y="9" width="6" height="6" fill="#fd0"/></svg>
     Start
   </div>
-  <div class="task">&#127774; WALL.bmp &mdash; bigsun Paint</div>
+  <div class="task">WALL.bmp - bigsun Paint</div>
   <span class="sp"></span>
   <div id="tbclock">--:--</div>
 </div>
 
 <div id="help">
   <div class="dlg raised">
-    <div class="titlebar"><span>Help Topics: bigsun Paint</span><span class="sp"></span><span class="tbtn">&#10005;</span></div>
+    <div class="titlebar"><span>Help Topics: bigsun Paint</span><span class="sp"></span><span class="tbtn">&times;</span></div>
     <div class="dbody">
       <table>
         <tr><td class="k">F</td><td>fullscreen on / off</td></tr>
         <tr><td class="k">S</td><td>colour scheme: Eggplant / Standard / High Contrast Black</td></tr>
         <tr><td class="k">W</td><td>Windows chrome on / off (pure neon wall)</td></tr>
-        <tr><td class="k">Q</td><td>show / hide QR dialog</td></tr>
+        <tr><td class="k">Q</td><td>show / hide QR dialog (off &mdash; using posters)</td></tr>
         <tr><td class="k">T</td><td>show / hide neon title</td></tr>
         <tr><td class="k">I</td><td>show / hide status bar</td></tr>
         <tr><td class="k">G</td><td>glow: full / soft / off</td></tr>
@@ -428,15 +430,8 @@ function drawTag(g, t, alpha, scaleMul) {
   g.globalAlpha = alpha;
   g.drawImage(t.img, -w / 2, -h / 2, w, h);
 
-  // the signature, glowing under the piece
-  const fs = Math.max(10, w * 0.085);
-  g.font = 'bold ' + fs + 'px "Courier New", monospace';
-  g.textAlign = 'center';
-  g.textBaseline = 'top';
-  g.shadowColor = 'rgba(255,214,64,.9)';
-  g.shadowBlur = fs * 0.8;
-  g.fillStyle = 'rgba(255,246,214,' + (alpha * 0.9).toFixed(3) + ')';
-  g.fillText((t.name || 'ANON').toUpperCase(), 0, h / 2 + fs * 0.25);
+  /* Pieces are signed by hand in paint, so nothing is captioned here.
+     If a typed name ever comes back, this is where it would draw. */
   g.restore();
 }
 
@@ -501,7 +496,7 @@ function buildGlow() {
 /* ---------------- brick preview (testing only) ---------------- */
 function buildBrick() {
   brctx.setTransform(1, 0, 0, 1, 0, 0);
-  brctx.fillStyle = '#16141b';
+  brctx.fillStyle = '#241f1c';
   brctx.fillRect(0, 0, W, H);
 
   const bh = Math.max(8, Math.round(H / 14));
@@ -510,8 +505,9 @@ function buildBrick() {
     const off = row % 2 ? bw / 2 : 0;
     for (let col = -1; col * bw < W + bw; col++) {
       const x = col * bw + off;
-      const tint = 22 + Math.floor(Math.random() * 14);
-      brctx.fillStyle = 'rgb(' + (tint + 14) + ',' + (tint + 6) + ',' + (tint + 18) + ')';
+      // pale painted brick, dimly lit - closer to what the projector actually sits on
+      const tint = 44 + Math.floor(Math.random() * 18);
+      brctx.fillStyle = 'rgb(' + (tint + 16) + ',' + (tint + 11) + ',' + (tint + 4) + ')';
       brctx.fillRect(x + 2, row * bh + 2, bw - 4, bh - 4);
     }
   }

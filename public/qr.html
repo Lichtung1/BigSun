@@ -9,7 +9,7 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; min-height: 100vh; background: #008080;
-    font-family: Tahoma, "MS Sans Serif", Geneva, sans-serif; font-size: 12px;
+    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif; font-size: 12px;
     display: flex; align-items: center; justify-content: center; padding: 16px;
   }
   .raised { box-shadow: inset -1px -1px 0 #000, inset 1px 1px 0 #fff, inset -2px -2px 0 var(--dgray), inset 2px 2px 0 var(--lgray); }
@@ -46,12 +46,12 @@
 <body>
 
 <div class="window raised">
-  <div class="titlebar">&#127774; bigsun &mdash; Print the QR</div>
+  <div class="titlebar">bigsun - Print the QR</div>
   <div class="body">
     <div class="qrbox raised"><img src="/qr.png?size=1000" alt="QR code"></div>
     <div class="cap">SCAN &rarr; PAINT THE WALL</div>
     <div class="url" id="url"></div>
-    <button class="btn" onclick="window.print()">&#128424; Print&hellip;</button>
+    <button class="btn" onclick="window.print()">Print...</button>
     <div class="note">
       <b>Tip:</b> print 3&ndash;4 copies &mdash; tape one to the bar, one to the queue rail,
       one near the wall. The QR also shows in the corner of the projection itself,

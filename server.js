@@ -69,7 +69,12 @@ setInterval(() => {
 /* ---------------- placement ----------------
    The server decides where each approved piece lands so the mural spreads
    across the wall instead of piling up. Coordinates are 0..1 fractions of
-   the projected area. The bottom-right corner is kept clear for the QR. */
+   the projected area.
+
+   RESERVE_QR_CORNER: set true only if you turn the on-wall QR panel back on
+   (the Q key on the wall page). Left false, pieces use the whole wall. */
+const RESERVE_QR_CORNER = false;
+
 function assignPlacement(aspect) {
   const scale = 0.12 + Math.random() * 0.10;               // piece width as a fraction of wall width
   const hFrac = Math.min(0.8, scale * (aspect || 1) * (16 / 9));
@@ -80,7 +85,7 @@ function assignPlacement(aspect) {
   for (let i = 0; i < 12; i++) {
     const x = 0.06 + Math.random() * 0.88;
     const y = yMin + Math.random() * (yMax - yMin);
-    if (x > 0.76 && y > 0.62) continue;                    // QR corner stays clear
+    if (RESERVE_QR_CORNER && x > 0.76 && y > 0.62) continue;
     let d = 9;
     for (const r of recent) d = Math.min(d, (x - r.x) ** 2 + (y - r.y) ** 2);
     if (d > bestScore) { bestScore = d; best = { x, y }; }
@@ -105,11 +110,13 @@ app.post('/api/submit', (req, res) => {
     return res.status(413).json({ ok: false, error: 'Drawing too large — try a simpler piece.' });
   }
 
+  /* The tag is signed in paint, so a typed name is optional. Kept sanitised
+     in case a name is ever supplied again; empty means "no caption". */
   const name = String(b.name || '')
     .replace(/[^\x20-\x7E]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 18) || 'ANON';
+    .slice(0, 18);
 
   const token = String(b.token || req.ip || 'x').slice(0, 64);
   const now = Date.now();
