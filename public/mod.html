@@ -13,7 +13,7 @@
   html, body { margin: 0; height: 100%; }
   body {
     background: #008080;
-    font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+    font-family: "MS Sans Serif", "Tahoma", "Geneva", sans-serif;
     font-size: 12px; color: #000;
     padding: 10px;
   }
@@ -59,9 +59,10 @@
   #emptyq { padding: 18px; text-align: center; color: #333; background: #fff; }
 
   /* approved strip */
-  #strip { display: flex; gap: 10px; overflow-x: auto; padding: 8px; background: #101014; }
-  .thumb { flex: 0 0 auto; background: var(--gray); padding: 5px; text-align: center; width: 128px; }
-  .thumb img { display: block; width: 118px; height: 84px; object-fit: contain; background: #101014; margin: 0 auto; }
+  #strip { display: flex; flex-wrap: wrap; gap: 10px; padding: 8px; background: #101014;
+    max-height: 60vh; overflow-y: auto; }
+  .thumb { flex: 0 0 auto; background: var(--gray); padding: 5px; text-align: center; width: 156px; }
+  .thumb img { display: block; width: 146px; height: 104px; object-fit: contain; background: #101014; margin: 0 auto; }
   .thumb .nm { font-weight: bold; margin: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .thumb .btn { min-width: 0; width: 100%; min-height: 30px; padding: 4px; }
 
@@ -88,14 +89,15 @@
   <div id="bar" class="body">
     <span class="stat sunken"><span id="dot"></span>Queue: <span id="nPending">0</span></span>
     <span class="stat sunken">On wall: <span id="nWall">0</span></span>
+    <label><input type="checkbox" id="auto"> <b>Auto-approve everything</b></label>
     <label><input type="checkbox" id="sound"> New-piece beep</label>
   </div>
 </div>
 
-<p class="hint">Newest at the bottom &mdash; work from the top. Keys: <b>A</b> approve oldest &nbsp;&middot;&nbsp; <b>R</b> reject oldest.</p>
+<p class="hint" id="modeHint"></p>
 
 <div class="window raised">
-  <div class="titlebar"><span>Waiting for approval</span><span class="sp"></span></div>
+  <div class="titlebar"><span id="queueTitle">Waiting for approval</span><span class="sp"></span></div>
   <div class="body">
     <div id="queue"></div>
     <div id="emptyq">Queue is clear - new pieces appear here the moment someone hits Send.</div>
@@ -103,7 +105,7 @@
 </div>
 
 <div class="window raised">
-  <div class="titlebar"><span>On the wall &mdash; latest 24</span><span class="sp"></span></div>
+  <div class="titlebar"><span>On the wall. Tap Remove to pull anything down.</span><span class="sp"></span></div>
   <div class="body">
     <div id="strip" class="sunken"></div>
   </div>
@@ -156,6 +158,23 @@ function submitPw() {
 }
 document.getElementById('dOk').addEventListener('click', submitPw);
 pwIn.addEventListener('keydown', e => { if (e.key === 'Enter') submitPw(); });
+
+/* ---------------- auto-approve ---------------- */
+const autoBox = document.getElementById('auto');
+const queueWin = document.getElementById('queue').closest('.window');
+const modeHint = document.getElementById('modeHint');
+
+autoBox.addEventListener('change', () => {
+  if (socket) socket.emit('mod:setAuto', autoBox.checked);
+});
+
+function showMode(on) {
+  autoBox.checked = on;
+  queueWin.style.display = on ? 'none' : '';
+  modeHint.innerHTML = on
+    ? 'Everything goes straight to the wall. Watch it, and hit <b>Remove</b> on anything you want gone. It disappears from the projection right away.'
+    : 'Newest at the bottom, work from the top. Keys: <b>A</b> approve oldest, <b>R</b> reject oldest.';
+}
 
 /* ---------------- sound ---------------- */
 const soundBox = document.getElementById('sound');
@@ -282,7 +301,11 @@ function connect(pw) {
     askPassword('Wrong password — try again.');
   });
 
-  socket.on('counts', c => { nPend.textContent = c.pending; nWall.textContent = c.onWall; });
+  socket.on('counts', c => {
+    nPend.textContent = c.pending;
+    nWall.textContent = c.onWall;
+    if (typeof c.auto === 'boolean') showMode(c.auto);
+  });
 
   socket.on('mod:pendingBatch', items => items.forEach(addPendingCard));
   socket.on('mod:pendingDone', () => {});

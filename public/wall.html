@@ -70,7 +70,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
 body {
   background: var(--desktop);
   color: var(--text);
-  font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+  font-family: "MS Sans Serif", "Tahoma", "Geneva", sans-serif;
   /* everything scales off this, so the chrome reads from across the park */
   font-size: clamp(12px, 2.05vh, 30px);
   display: flex; flex-direction: column;
@@ -339,7 +339,8 @@ body.bare .paintstage { box-shadow: none; }
   <div class="statusbar">
     <span class="cell grow">For Help, press K</span>
     <span class="cell" id="schemeCell">Eggplant</span>
-    <span class="cell" id="deskCell">Black</span>
+    <span class="cell" id="deskCell">Wall: Black</span>
+    <span class="cell" id="bgCell">Desk: Scheme</span>
     <span class="cell"><span id="dot"></span> <span id="liveTxt">connecting&hellip;</span></span>
     <span class="cell" id="countCell">0 pieces</span>
   </div>
@@ -380,7 +381,9 @@ body.bare .paintstage { box-shadow: none; }
         <tr><td class="k">T</td><td>show / hide neon title</td></tr>
         <tr><td class="k">I</td><td>show / hide status bar</td></tr>
         <tr><td class="k">G</td><td>glow: full / soft / off</td></tr>
-        <tr><td class="k">B</td><td>desktop colour behind the mural: Black / Teal / Blue / Navy / Green / Maroon / Purple / Grey</td></tr>
+        <tr><td class="k">B</td><td>colour behind the mural (Black is best for projecting)</td></tr>
+        <tr><td class="k">D</td><td>desktop colour behind the whole window</td></tr>
+        <tr><td class="k">D</td><td>desktop colour around the window, same list</td></tr>
         <tr><td class="k">X</td><td>clear this screen's saved pieces (see README)</td></tr>
         <tr><td class="k">K</td><td>this help</td></tr>
       </table>
@@ -622,7 +625,9 @@ const DESKTOPS = [
   { name: 'Purple',       color: '#400040' },
   { name: 'Grey',         color: '#808080' }
 ];
-let deskIx = 0;
+let deskIx = 0;    // B: behind the mural
+let bgIx   = -1;   // D: the desktop behind the window (-1 = follow the scheme)    // B: behind the mural
+let wallpaperIx = 0;   // D: the desktop around the window
 let glowDirty = true;
 
 const AGE_FULL_MS  = 22 * 60 * 1000;   // full brightness for this long
@@ -950,17 +955,40 @@ addEventListener('keydown', e => {
     case 't': document.getElementById('neonTitle').classList.toggle('hidden'); break;
     case 'i': document.querySelector('.statusbar').classList.toggle('hidden'); break;
     case 'b': setDesktop(deskIx + 1); break;
+    case 'd': setBackdrop(bgIx + 1); break;
+    case 'd': setWallpaper(wallpaperIx + 1); break;
     case 'g': glowLevel = (glowLevel + 2) % 3; glowDirty = true; break;
     case 'x': askWipe(); break;
     case 'k': document.getElementById('help').classList.toggle('show'); break;
   }
 });
 
-/* ---------------- desktop colour ---------------- */
+/* ---------------- the desktop behind the window ---------------- */
+function setBackdrop(ix, remember) {
+  bgIx = ix;
+  if (bgIx < -1) bgIx = DESKTOPS.length - 1;
+  if (bgIx >= DESKTOPS.length) bgIx = -1;
+  document.body.style.background = (bgIx === -1) ? '' : DESKTOPS[bgIx].color;
+  const cell = document.getElementById('bgCell');
+  if (cell) cell.textContent = 'Desk: ' + (bgIx === -1 ? 'Scheme' : DESKTOPS[bgIx].name);
+  if (remember !== false) {
+    try { localStorage.setItem('bsw_bg', String(bgIx)); } catch (e) {}
+  }
+}
+
+/* ---------------- the colour behind the mural ---------------- */
+function setWallpaper(ix, remember) {
+  wallpaperIx = ((ix % DESKTOPS.length) + DESKTOPS.length) % DESKTOPS.length;
+  document.body.style.background = wallpaperIx === 0 ? '' : DESKTOPS[wallpaperIx].color;
+  if (remember !== false) {
+    try { localStorage.setItem('bsw_paper', String(wallpaperIx)); } catch (e) {}
+  }
+}
+
 function setDesktop(ix, remember) {
   deskIx = ((ix % DESKTOPS.length) + DESKTOPS.length) % DESKTOPS.length;
   const cell = document.getElementById('deskCell');
-  if (cell) cell.textContent = DESKTOPS[deskIx].name;
+  if (cell) cell.textContent = 'Wall: ' + DESKTOPS[deskIx].name;
   if (remember !== false) {
     try { localStorage.setItem('bsw_desk', String(deskIx)); } catch (e) {}
   }
@@ -1025,6 +1053,17 @@ fetch('/url')
   let savedDesk = 0;
   try { savedDesk = parseInt(localStorage.getItem('bsw_desk'), 10) || 0; } catch (e) {}
   setDesktop(savedDesk, false);
+
+  let savedBg = -1;
+  try {
+    const v = localStorage.getItem('bsw_bg');
+    if (v !== null) savedBg = parseInt(v, 10);
+  } catch (e) {}
+  setBackdrop(isNaN(savedBg) ? -1 : savedBg, false);
+
+  let savedPaper = 0;
+  try { savedPaper = parseInt(localStorage.getItem('bsw_paper'), 10) || 0; } catch (e) {}
+  setWallpaper(savedPaper, false);
 
   tickClock();
   db = await openDB();

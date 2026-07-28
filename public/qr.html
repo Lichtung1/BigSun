@@ -23,7 +23,7 @@
 html, body {
   margin: 0; min-height: 100%;
   background: var(--teal);
-  font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+  font-family: "MS Sans Serif", "Tahoma", "Geneva", sans-serif;
   font-size: 12px;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -52,7 +52,9 @@ body {
   display: flex; align-items: center; gap: 5px;
 }
 .titlebar .sp { flex: 1; }
-.titlebar .appicon { width: 16px; height: 16px; display: block; }
+.titlebar .appicon { display: inline-flex; align-items: center; }
+.titlebar .appicon svg,
+.titlebar .appicon img { width: 18px; height: 18px; display: block; image-rendering: pixelated; }
 
 /* title bar buttons, 16x14 like the real thing */
 .tbtn {
@@ -99,9 +101,13 @@ body {
   body { padding: 0; display: block; background: var(--teal); }
   .window { width: 100%; margin: 0 auto; }
   .noprint { display: none !important; }
-  .qrframe img { width: 13cm; }
-  .cap { font-size: 30pt; margin-top: 20pt; }
+  .qrframe img { width: 12cm; }
+  .cap { font-size: 28pt; margin-top: 18pt; }
   .url { font-size: 13pt; }
+  .titlebar { font-size: 13pt; }
+  .menubar { font-size: 12pt; }
+  .statusbar { font-size: 11pt; }
+  .tbtn { width: 22px; height: 19px; }
 }
 </style>
 </head>
@@ -109,23 +115,23 @@ body {
 
 <div class="window raised">
   <div class="titlebar">
-    <svg class="appicon" viewBox="0 0 16 16" shape-rendering="crispEdges">
+    <span class="appicon" id="appIcon"><svg viewBox="0 0 16 16" shape-rendering="crispEdges">
       <rect width="16" height="16" fill="#000080"/>
       <rect x="3" y="3" width="10" height="10" fill="#FFD400"/>
       <rect x="5" y="5" width="6" height="6" fill="#FF9500"/>
-    </svg>
+    </svg></span>
     <span>bigsun - Print the QR</span>
     <span class="sp"></span>
-    <button class="tbtn noprint" aria-label="Minimize">
+    <button class="tbtn" aria-label="Minimize">
       <svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="#000"/></svg>
     </button>
-    <button class="tbtn noprint" aria-label="Maximize">
+    <button class="tbtn" aria-label="Maximize">
       <svg viewBox="0 0 16 14" shape-rendering="crispEdges">
         <rect x="3" y="2" width="10" height="9" fill="#000"/>
         <rect x="4" y="5" width="8" height="5" fill="#c0c0c0"/>
       </svg>
     </button>
-    <button class="tbtn noprint" aria-label="Close">
+    <button class="tbtn" aria-label="Close">
       <svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="#000">
         <rect x="4" y="3" width="2" height="1"/><rect x="10" y="3" width="2" height="1"/>
         <rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/>
@@ -138,7 +144,7 @@ body {
     </button>
   </div>
 
-  <div class="menubar noprint">
+  <div class="menubar">
     <span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>H</u>elp</span>
   </div>
 
@@ -149,13 +155,22 @@ body {
     <button class="btn noprint" onclick="window.print()">Print...</button>
   </div>
 
-  <div class="statusbar noprint">
+  <div class="statusbar">
     <span class="cell grow">Ready</span>
     <span class="cell">bigsun</span>
   </div>
 </div>
 
 <script>
+/* a custom app.png, if you've made one, replaces the drawn icon */
+(function () {
+  var el = document.getElementById('appIcon');
+  var img = new Image();
+  img.onload = function () { el.innerHTML = ''; img.alt = ''; el.appendChild(img); };
+  img.onerror = function () {};
+  img.src = '/icons/app.png';
+})();
+
 fetch('/url')
   .then(function (r) { return r.text(); })
   .then(function (u) { document.getElementById('url').textContent = u.replace(/^https?:\/\//, ''); })

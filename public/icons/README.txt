@@ -1,86 +1,84 @@
-BIG SUN WALL - CUSTOM TOOLBOX ICONS
-===================================
+BIG SUN WALL: CUSTOM ICONS
+==========================
 
-Drop PNG files in this folder and they replace the built-in drawn icons.
-Anything missing falls back automatically, so you can add them one at a
-time and refresh to see each one land. Nothing breaks if you never add any.
+Drop PNG files in this folder and they replace the built in artwork.
+Anything missing falls back on its own, so you can add them one at a
+time and refresh to see each one land. Nothing breaks if you never add
+any at all.
 
 
 THE SPEC
 --------
-Size:        16 x 16 pixels  (32 x 32 also works if you want more detail)
+Size:        32 x 32 pixels (16 x 16 also works)
 Format:      PNG
-Background:  TRANSPARENT - yes, required. The button behind the icon
-             changes colour, so a filled background will look like a
-             sticker sitting on the button.
-Colours:     Draw as if on the classic grey button face (#C0C0C0).
-             Black outlines are correct.
-
-             The phone app is always classic grey, so that's simply what
-             your icons sit on. The projector wall runs a dark scheme
-             (Eggplant), but its toolbox flips back to grey automatically
-             the moment a complete custom set loads - so you never need a
-             second dark version of anything. Draw once, for grey.
-Anti-alias:  Don't. Hard pixel edges only, no soft or feathered edges.
-             The icons get scaled up on screen, and soft edges turn to mush.
+Background:  TRANSPARENT. This one is required. The button behind the
+             icon changes colour, so a filled background will look like
+             a sticker sitting on the button.
+Colours:     Anything. The phone's toolbox is always classic grey. The
+             wall's toolbox follows whatever colour scheme is running,
+             so avoid pure black outlines with nothing else going on or
+             they can get lost on a dark scheme.
+Anti-alias:  Do not. Hard pixel edges only, no soft or feathered edges.
 
              This is the single most common thing that makes finished
-             icons look wrong. Check for it: open your PNG and zoom
-             right in on a diagonal edge. If the edge is one hard step
-             from colour to transparent, it's correct. If there's a
-             halo of half-transparent pixels softening the step, the
-             editor anti-aliased it - turn that off and redraw the edge.
-             In Piskel the pen is hard-edged by default; the shape and
-             line tools are where softening usually creeps in.
+             icons look wrong. To check, open your PNG and zoom right
+             in on a diagonal edge. If the edge is one hard step from
+             colour to transparent, it is correct. If there is a halo
+             of half transparent pixels softening the step, the editor
+             anti-aliased it. Turn that off and redraw the edge. In
+             Piskel the pen is hard edged by default, but the line and
+             shape tools are where softening usually creeps in.
 
 
-FILE NAMES
-----------
-The phone app uses these five. These are the ones worth doing first,
-since this is the screen people actually hold:
+THE PHONE APP: FIVE FILES
+-------------------------
+These are the ones worth doing first, since this is the screen people
+actually hold.
 
     airbrush.png      the spray can
     brush.png         the paintbrush
     eraser.png        the eraser
     undo.png          undo arrow
-    clear.png         clear the canvas (currently a bin)
-
-WINDOW AND TASKBAR ICONS
-------------------------
-These two are used by BOTH the phone app and the projector wall, so
-drawing them once covers everything:
-
-    app.png       the little icon in the window title bar, and again
-                  in the taskbar button along the bottom
-    start.png     the logo on the Start button (the Windows flag)
-
-Same spec as the tools: 32 x 32, transparent, no anti-aliasing.
-
-Note app.png is shown small - roughly 16px in the title bar. Keep the
-design bold and simple: a few big shapes read far better at that size
-than fine detail, which just turns to noise.
+    clear.png         clear the canvas
 
 
-THE WALL'S DECORATIVE TOOLBOX
+WINDOW AND TASKBAR: TWO FILES
 -----------------------------
-The projector wall shows a full decorative Paint toolbox. These are
-OPTIONAL. It's seen from across a car park and the built-in ones look
-fine at that distance.
+These are used by both the phone app and the projector wall, so drawing
+them once covers everything.
 
-Important: the wall uses custom icons ALL OR NOTHING. Until all sixteen
-below exist, it keeps its own matching set. That's deliberate - three of
-your five phone icons (airbrush, brush, eraser) are shared with the wall,
-and loading only those would leave its toolbox half your style and half
-mine. So there's no half-finished state: add all sixteen and the wall
-switches over, or add none and it stays consistent.
+    app.png           the icon in the window title bar, and again in the
+                      taskbar button along the bottom
+    start.png         the logo on the Start button
 
-    freeform.png      free-form select
+app.png shows up small, around 16px in the title bar. Keep it bold and
+simple. A few big shapes read far better at that size than fine detail,
+which just turns to noise.
+
+
+THE WALL'S DECORATIVE TOOLBOX: SIXTEEN FILES
+--------------------------------------------
+The projector wall shows a full Paint toolbox down the left side. These
+are optional. It is seen from across a car park and the built in ones
+look fine at that distance.
+
+Custom icons here are ALL OR NOTHING. Until all sixteen exist, the wall
+keeps its own matching set. That is on purpose. Three of your five phone
+icons are shared with the wall, and loading only those would leave its
+toolbox half your style and half the built in one. So there is no half
+finished state. Add all sixteen and the wall switches over, or add none
+and it stays consistent.
+
+    freeform.png      free form select
     select.png        rectangular select
+    eraser.png        (shared with the phone)
     fill.png          paint bucket
-    picker.png        colour picker / eyedropper
+    picker.png        colour picker
     magnify.png       magnifier
     pencil.png        pencil
-    text.png          text tool (the A)
+    brush.png         (shared with the phone)
+    airbrush.png      (shared with the phone)
+    text.png          the A
     line.png          straight line
     curve.png         curve
     rect.png          rectangle
@@ -88,31 +86,31 @@ switches over, or add none and it stays consistent.
     ellipse.png       ellipse
     roundrect.png     rounded rectangle
 
-(eraser.png, brush.png and airbrush.png are shared - the wall uses the
-same files as the phone, so you only draw those once.)
-
 
 WHERE TO DRAW THEM
 ------------------
 Any pixel editor that exports transparent PNG at an exact size:
 
-  - Piskel          piskelapp.com        free, browser, made for this
-  - Lospec editor   lospec.com/pixel-editor    free, browser
-  - GIMP            gimp.org             free, desktop
-  - Aseprite                             paid, the nicest of the lot
+  Piskel          piskelapp.com              free, browser, made for this
+  Lospec editor   lospec.com/pixel-editor    free, browser
+  GIMP            gimp.org                   free, desktop
+  Aseprite                                   paid, the nicest of them
 
-Set the canvas to 16 x 16, turn OFF anti-aliasing, use the pencil tool
-at 1px, and export as PNG with transparency.
+Set the canvas to 32 x 32, turn off anti-aliasing, use the pencil at
+1px, and export as PNG with transparency.
 
-If you want to trace the originals, real Windows 95 Paint icons are
-easy to find as reference - search for "Windows 95 Paint toolbar icons".
-Matching them by eye at 16 x 16 gets you very close.
+If you want to trace the originals, real Windows 95 Paint icons are easy
+to find as reference. Search for "Windows 95 Paint toolbar icons".
 
 
 AFTER YOU ADD THEM
 ------------------
-Upload the icons folder to GitHub the same way as the rest, inside
-public/ so the path is:  public/icons/airbrush.png
+Upload the icons folder to GitHub the same way as everything else,
+inside public/ so the path ends up as:
 
-Render redeploys on its own. Then hard-refresh the page (Ctrl+Shift+R)
-so the browser fetches the new files instead of its cached copies.
+    public/icons/airbrush.png
+
+Render redeploys on its own. Then hard refresh the page with
+Ctrl + Shift + R so the browser fetches the new files instead of the
+cached copies. If your icons do not seem to have changed, this is
+almost always why.

@@ -15,7 +15,7 @@
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   html,body{ height:100%; overflow:hidden; }
   body{
-    font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
+    font-family:"MS Sans Serif", "Tahoma", "Geneva", sans-serif;
     font-size:12px; background:var(--teal); color:#000;
     position:fixed; inset:0; width:100%;
     height:100vh; height:100dvh;
@@ -855,14 +855,16 @@ function swapIcon(el, name, cls) {
     .then(function(res){
       clearTimeout(kill); clearInterval(anim);
       if (res.j && res.j.ok){
-        p.set(18); p.text('Queued for the moderator');
+        p.set(18); p.text(res.j && res.j.live ? 'On the wall' : 'Queued for the moderator');
         if (navigator.vibrate) navigator.vibrate(12);
         setTimeout(function(){
           p.close();
           dlg({
             title: 'Sent',
-            body: 'Your piece is <b>#' + res.j.position + ' in line</b>.<br>' +
-                  'Watch the wall over the bar — when the moderator waves it through, it ignites.',
+            body: res.j && res.j.live
+              ? 'Your piece is <b>up on the wall right now</b>.<br>Look above the bar.'
+              : 'Your piece is <b>#' + res.j.position + ' in line</b>.<br>' +
+                'Watch the wall over the bar. It ignites once it is waved through.',
             buttons: [
               { label: 'Paint another', onClick: function(){
                   ctx.clearRect(0, 0, art.width, art.height);

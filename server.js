@@ -158,14 +158,21 @@ app.post('/api/submit', (req, res) => {
   if (now - last < COOLDOWN_MS) {
     return res.status(429).json({ ok: false, wait: Math.ceil((COOLDOWN_MS - (now - last)) / 1000) });
   }
-  if (pending.length >= MAX_PENDING) {
-    return res.status(503).json({ ok: false, error: 'The queue is full — try again in a minute.' });
+  if (!autoApprove && pending.length >= MAX_PENDING) {
+    return res.status(503).json({ ok: false, error: 'The queue is full. Try again in a minute.' });
   }
 
   lastSend.set(token, now);
   const w = Math.max(1, +b.w || 1);
   const h = Math.max(1, +b.h || 1);
   const item = { id: nextId++, name, image: b.image, aspect: +(h / w).toFixed(3), ts: now };
+
+  if (autoApprove) {
+    placeOnWall(item);
+    broadcastCounts();
+    return res.json({ ok: true, position: 0, live: true });
+  }
+
   pending.push(item);
   io.to('mods').emit('pending:new', item);
   broadcastCounts();
@@ -222,8 +229,35 @@ function sendBatched(socket, event, items, doneEvent, size = 8) {
   })();
 }
 
+/* Auto-approve: pieces go straight to the wall with no queue. You watch the
+   wall and pull anything you don't want, instead of vetting each one first.
+   Set AUTO_APPROVE=false in the environment to start with the queue on, and
+   you can flip it either way from the moderation page while the show runs. */
+let autoApprove = process.env.AUTO_APPROVE !== 'false';
+
 function broadcastCounts() {
-  io.to('mods').emit('counts', { pending: pending.length, onWall: approved.length });
+  io.to('mods').emit('counts', {
+    pending: pending.length,
+    onWall: approved.length,
+    auto: autoApprove
+  });
+}
+
+/* Put a piece on the wall. Used by the approve button and by auto-approve. */
+function placeOnWall(item) {
+  const { slot, retire } = pickSlot();
+  if (retire !== null) {
+    approved = approved.filter(t => t.id !== retire);
+    io.to('wall').emit('wall:retire', retire);
+    io.to('mods').emit('approved:remove', retire);
+  }
+  const tag = { ...item, ...assignPlacement(item.aspect, slot), approvedAt: Date.now() };
+  approved.push(tag);
+  if (approved.length > MAX_APPROVED) approved = approved.slice(-MAX_APPROVED);
+  io.to('wall').emit('wall:add', tag);
+  io.to('mods').emit('approved:add', tag);
+  scheduleSave();
+  return tag;
 }
 
 io.on('connection', socket => {
@@ -255,23 +289,23 @@ io.on('connection', socket => {
       const i = pending.findIndex(p => p.id === id);
       if (i === -1) return;
       const item = pending.splice(i, 1)[0];
-
-      // free a cell if the wall is full: the oldest piece fades out
-      const { slot, retire } = pickSlot();
-      if (retire !== null) {
-        approved = approved.filter(t => t.id !== retire);
-        io.to('wall').emit('wall:retire', retire);
-        io.to('mods').emit('approved:remove', retire);
-      }
-
-      const tag = { ...item, ...assignPlacement(item.aspect, slot), approvedAt: Date.now() };
-      approved.push(tag);
-      if (approved.length > MAX_APPROVED) approved = approved.slice(-MAX_APPROVED);
-      io.to('wall').emit('wall:add', tag);
+      placeOnWall(item);
       io.to('mods').emit('pending:remove', id);
-      io.to('mods').emit('approved:add', tag);
       broadcastCounts();
-      scheduleSave();
+    });
+
+    socket.on('mod:setAuto', on => {
+      if (!socket.data.isMod) return;
+      autoApprove = !!on;
+      /* turning it on clears whatever was already waiting straight to the wall */
+      if (autoApprove && pending.length) {
+        const queued = pending.splice(0, pending.length);
+        queued.forEach(item => {
+          placeOnWall(item);
+          io.to('mods').emit('pending:remove', item.id);
+        });
+      }
+      broadcastCounts();
     });
 
     socket.on('mod:reject', id => {
@@ -299,10 +333,11 @@ io.on('connection', socket => {
 
 server.listen(PORT, () => {
   console.log('');
-  console.log('  \u{1F31E} Big Sun Wall is running');
+  console.log('  Big Sun Wall is running');
   console.log(`     Phones paint at:  http://localhost:${PORT}/`);
   console.log(`     Projector page:   http://localhost:${PORT}/wall`);
   console.log(`     Moderation:       http://localhost:${PORT}/mod   (password: ${MOD_PASSWORD})`);
+  console.log(`     Auto-approve:     ${autoApprove ? 'ON  (pieces go straight to the wall)' : 'off (queue for approval)'}`);
   console.log(`     Printable QR:     http://localhost:${PORT}/qr`);
   console.log('');
 });
