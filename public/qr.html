@@ -59,6 +59,7 @@ body {
 /* title bar buttons, 16x14 like the real thing */
 .tbtn {
   width: 16px; height: 14px; background: var(--face); padding: 0; border: 0;
+  color: #000;                 /* .titlebar sets white; glyphs must not inherit it */
   display: flex; align-items: center; justify-content: center;
   box-shadow: inset -1px -1px 0 var(--dark),  inset  1px  1px 0 var(--light),
               inset -2px -2px 0 var(--shadow), inset  2px  2px 0 var(--hilite);
@@ -123,7 +124,7 @@ body {
     <span>bigsun</span>
     <span class="sp"></span>
     <button class="tbtn" aria-label="Minimize">
-      <svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="3" y="9" width="6" height="2" fill="currentColor"/></svg>
+      <svg viewBox="0 0 16 14" shape-rendering="crispEdges"><rect x="5" y="9" width="6" height="2" fill="currentColor"/></svg>
     </button>
     <button class="tbtn" aria-label="Maximize">
       <svg viewBox="0 0 16 14" shape-rendering="crispEdges" fill="currentColor">
