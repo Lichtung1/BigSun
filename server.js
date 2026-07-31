@@ -16,7 +16,7 @@ const { Server } = require('socket.io');
 const QRCode = require('qrcode');
 
 const PORT = process.env.PORT || 3000;
-const MOD_PASSWORD = process.env.MOD_PASSWORD || 'bigsun';   // <-- change this (see README)
+const MOD_PASSWORD = process.env.MOD_PASSWORD;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 const COOLDOWN_MS = 45 * 1000;  // minimum gap between sends, per phone
