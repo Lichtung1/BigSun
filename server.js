@@ -16,13 +16,14 @@ const { Server } = require('socket.io');
 const QRCode = require('qrcode');
 
 const PORT = process.env.PORT || 3000;
-const MOD_PASSWORD = process.env.MOD_PASSWORD;
+const MOD_PASSWORD = process.env.MOD_PASSWORD || 'bigsun';   // <-- change this (see README)
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 const COOLDOWN_MS = 45 * 1000;  // minimum gap between sends, per phone
 const MAX_PENDING = 200;        // moderation queue cap
 const MAX_APPROVED = 350;       // pieces kept in server memory (the wall keeps its own copy too)
 const DATA_KEEP = 200;          // how many approved pieces get saved to disk
+const ARCHIVE_MAX = 3000;       // every piece ever sent, kept for the archive
 
 const app = express();
 app.set('trust proxy', true);
@@ -34,13 +35,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 /* ---------------- state ---------------- */
 let pending = [];   // waiting for the moderator
-let approved = [];  // on the wall
+let approved = [];
+let archive = [];               // never pruned by the grid: this is the record  // on the wall
 let nextId = 1;
 const lastSend = new Map(); // phone token -> last submit time
 
 try {
   if (fs.existsSync(DATA_FILE)) {
     const s = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    archive = Array.isArray(s.archive) ? s.archive : [];
     approved = Array.isArray(s.approved) ? s.approved : [];
     nextId = s.nextId || approved.length + 1;
     console.log(`Loaded ${approved.length} saved pieces from data.json`);
@@ -53,7 +56,7 @@ let saveTimer = null;
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    const slim = { approved: approved.slice(-DATA_KEEP), nextId };
+    const slim = { approved: approved.slice(-DATA_KEEP), archive: archive.slice(-ARCHIVE_MAX), nextId };
     fs.writeFile(DATA_FILE, JSON.stringify(slim), err => {
       if (err) console.log('Save failed:', err.message);
     });
@@ -180,7 +183,17 @@ app.post('/api/submit', (req, res) => {
 });
 
 app.get('/api/stats', (req, res) => {
-  res.json({ pending: pending.length, onWall: approved.length });
+  res.json({ pending: pending.length, onWall: approved.length, archived: archive.length });
+});
+
+/* ---------------- the archive ----------------
+   Everything that ever went on the wall, including pieces the grid has
+   since cycled off. Open /archive in a browser to view and download. */
+app.get('/api/archive', (req, res) => {
+  res.json({
+    count: archive.length,
+    pieces: archive.map(t => ({ id: t.id, ts: t.ts, approvedAt: t.approvedAt, image: t.image }))
+  });
 });
 
 app.get('/healthz', (req, res) => res.send('ok'));
@@ -191,6 +204,7 @@ app.get('/', (req, res) => res.sendFile(pub('paint.html')));
 app.get('/wall', (req, res) => res.sendFile(pub('wall.html')));
 app.get('/mod', (req, res) => res.sendFile(pub('mod.html')));
 app.get('/qr', (req, res) => res.sendFile(pub('qr.html')));
+app.get('/archive', (req, res) => res.sendFile(pub('archive.html')));
 
 function baseUrl(req) {
   if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL;
@@ -253,6 +267,11 @@ function placeOnWall(item) {
   }
   const tag = { ...item, ...assignPlacement(item.aspect, slot), approvedAt: Date.now() };
   approved.push(tag);
+
+  /* The grid cycles pieces off the wall to make room. The archive does not:
+     it is the permanent record of everything that went up tonight. */
+  archive.push(tag);
+  if (archive.length > ARCHIVE_MAX) archive = archive.slice(-ARCHIVE_MAX);
   if (approved.length > MAX_APPROVED) approved = approved.slice(-MAX_APPROVED);
   io.to('wall').emit('wall:add', tag);
   io.to('mods').emit('approved:add', tag);

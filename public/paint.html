@@ -104,10 +104,6 @@
     touch-action:none; cursor:crosshair;
   }
   #art{ position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
-  #stage .hintchip{
-    position:absolute; top:6px; left:6px; padding:2px 6px; font-size:10px;
-    color:#9aa; background:rgba(0,0,0,.45); pointer-events:none; letter-spacing:.4px;
-  }
 
   /* ---------- colors ---------- */
   .colors{ display:flex; align-items:center; gap:6px; padding:5px 6px 3px; }
@@ -226,8 +222,7 @@
       <div class="stagewrap">
         <div id="stage">
           <canvas id="art"></canvas>
-          <div class="hintchip">NIGHT WALL PREVIEW</div>
-        </div>
+                  </div>
       </div>
     </div>
 
@@ -242,7 +237,7 @@
 
     <div class="status">
       <div class="grow" id="statL">For Help, ask the bar.</div>
-      <div id="statR">Blue Note Park</div>
+      <div id="statR">by VOID.RASTER</div>
     </div>
   </div>
 </div>
@@ -273,6 +268,59 @@
   /* ================= dialogs ================= */
   const shade = document.getElementById('shade');
   let dlgOpen = 0;
+
+  /* iOS Safari has ignored user-scalable=no since iOS 10, so a pinch zooms the
+     whole page. Because the layout is position:fixed with no scrolling, a
+     zoomed page can put Send out of reach with no way to pan back. Blocking
+     these Safari-only gesture events stops the zoom from starting. */
+  ['gesturestart','gesturechange','gestureend'].forEach(function(evt){
+    document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive: false });
+  });
+
+  /* double-tap zoom, same problem, same fix */
+  var lastTouchEnd = 0;
+  document.addEventListener('touchend', function(e){
+    var now = Date.now();
+    if (now - lastTouchEnd < 320) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  /* Safety net: if a phone zooms anyway, say so and offer a way out rather
+     than leaving someone stuck staring at an unreachable button. */
+  (function zoomGuard(){
+    if (!window.visualViewport) return;
+    var bar = null;
+    function check(){
+      var zoomed = window.visualViewport.scale > 1.05;
+      if (zoomed && !bar){
+        bar = document.createElement('div');
+        bar.style.cssText =
+          'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#ffffcc;' +
+          'border-top:2px solid #808080;padding:10px;text-align:center;font-weight:bold;' +
+          'font-family:inherit;font-size:13px';
+        bar.innerHTML = 'Page is zoomed in. Pinch back out, or ' +
+          '<button id="unzoom" style="font:inherit;font-weight:bold;padding:6px 12px">tap here</button>';
+        document.body.appendChild(bar);
+        bar.querySelector('#unzoom').addEventListener('click', function(){
+          var m = document.querySelector('meta[name=viewport]');
+          var keep = m.getAttribute('content');
+          m.setAttribute('content', keep + ', maximum-scale=1');
+          setTimeout(function(){ m.setAttribute('content', keep); }, 320);
+        });
+      } else if (!zoomed && bar){
+        bar.remove();
+        bar = null;
+      }
+    }
+    window.visualViewport.addEventListener('resize', check);
+    window.visualViewport.addEventListener('scroll', check);
+  })();
+
+  /* shown at the moment someone has just made something, which is the moment
+     they are most likely to care who built the thing */
+  var CREDIT = '<div style="margin-top:12px;font-size:11px;color:#333">' +
+               'Wall by <a href="https://www.instagram.com/void.raster/" ' +
+               'target="_blank" rel="noopener"><b>@void.raster</b></a></div>';
 
   function dlg(opts){
     dlgOpen++;
@@ -696,9 +744,27 @@ function swapIcon(el, name, cls) {
     ctx.globalAlpha = 1;
   }
 
+  /* One finger owns the stroke, so a stray touch cannot yank the line across
+     the canvas. But a second finger placed while drawing is a real gesture
+     people found on their own: it snaps a straight line from where you are
+     to where you tapped. That is kept, deliberately, because it turned out
+     to be the only way to draw a clean straight edge on a phone. */
+  let activeId = null;
+
   stage.addEventListener('pointerdown', function(e){
     if (dlgOpen) return;
     e.preventDefault();
+
+    // second finger while already drawing: rule a straight line to it
+    if (activeId !== null && down) {
+      const target = pt(e);
+      if (tool === 'spray') sprayLine(last, target);
+      else segment(last, target);
+      cur = last = prevFrame = target;
+      return;
+    }
+
+    activeId = e.pointerId;
     try { stage.setPointerCapture(e.pointerId); } catch(x){}
     down = true;
     cur = last = prevFrame = pt(e);
@@ -706,8 +772,18 @@ function swapIcon(el, name, cls) {
     if (tool !== 'spray') segment(cur, cur);
   });
 
+  /* lay spray evenly along a straight run, same feel as dragging it */
+  function sprayLine(a, b){
+    const r = SPRAY_R[sizeIdx] * DPR;
+    const steps = Math.max(1, Math.round(dist(a, b) / (r * 0.4)));
+    for (let i = 1; i <= steps; i++){
+      sprayAt(a.x + (b.x - a.x) * i / steps,
+              a.y + (b.y - a.y) * i / steps, r);
+    }
+  }
+
   stage.addEventListener('pointermove', function(e){
-    if (!down) return;
+    if (!down || e.pointerId !== activeId) return;
     e.preventDefault();
     const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
     for (let i = 0; i < list.length; i++){
@@ -718,9 +794,16 @@ function swapIcon(el, name, cls) {
     cur = last;
   });
 
-  function stopStroke(){ down = false; }
+  function stopStroke(e){
+    if (e && e.pointerId !== undefined && e.pointerId !== activeId) return;
+    down = false;
+    activeId = null;
+  }
   stage.addEventListener('pointerup', stopStroke);
   stage.addEventListener('pointercancel', stopStroke);
+  /* a finger leaving the window without a pointerup would otherwise
+     leave the spray running forever */
+  window.addEventListener('blur', function(){ down = false; activeId = null; });
   stage.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 
   function frame(){
@@ -862,9 +945,9 @@ function swapIcon(el, name, cls) {
           dlg({
             title: 'Sent',
             body: res.j && res.j.live
-              ? 'Your piece is <b>up on the wall right now</b>.<br>Look above the bar.'
+              ? 'Your piece is <b>up on the wall right now</b>.<br>Look above the bar.' + CREDIT
               : 'Your piece is <b>#' + res.j.position + ' in line</b>.<br>' +
-                'Watch the wall over the bar. It ignites once it is waved through.',
+                'Watch the wall over the bar. It ignites once it is waved through.' + CREDIT,
             buttons: [
               { label: 'Paint another', onClick: function(){
                   ctx.clearRect(0, 0, art.width, art.height);
@@ -923,7 +1006,7 @@ function swapIcon(el, name, cls) {
       title: 'About Big Sun Wall',
       icon: ICON.info,
       body: '<b>Big Sun Wall \u201995</b><br>Paint (Blue Note Park Edition)<br><br>' +
-            'Draw a thing, hit Send, and it shows up over the bar.<br><br>' +
+            'Spray a tag, hit Send, and it glows on the brick over the bar.<br><br>' +
             'Built by <b>void.raster</b><br>' +
             '<a href="https://www.instagram.com/void.raster/" target="_blank" rel="noopener">instagram.com/void.raster</a>'
     });
@@ -947,7 +1030,9 @@ function swapIcon(el, name, cls) {
     'For Help, find a friend.',
     'Hold the spray still and it drips.',
     'Brush for lines. Spray for glow.',
-    'Draw big. Blank space gets trimmed.'
+    'Draw big. Blank space gets trimmed.',
+    'Second finger down rules a straight line.',
+    'Please help offset the TTP.'
   ];
   let hi = 0;
   setInterval(function(){
