@@ -176,6 +176,12 @@
   .dlg .body{ padding:14px 12px; display:flex; gap:12px; align-items:flex-start; line-height:1.5; }
   .dlg .body .ico{ width:32px; height:32px; flex:0 0 32px; }
   .dlg .body .ico svg{ display:block; width:32px; height:32px; }
+  /* inherits the dialog's font and size on purpose: the credit was reading as
+     a different typeface only because it was smaller, greyer, and its link was
+     falling through to the browser default blue */
+  .dlg .body .credit{ margin-top:12px; font-size:inherit; color:inherit; }
+  .dlg .body a{ color:#000080; text-decoration:underline; }
+  .dlg .body a:visited{ color:#000080; }
   .dlg .btns{ display:flex; gap:8px; justify-content:center; padding:2px 10px 12px; flex-wrap:wrap; }
   .dlg .btns .btn{ min-width:86px; font-weight:bold; }
 
@@ -209,6 +215,7 @@
           <button class="btn tool" id="tSpray" title="Airbrush" aria-label="Airbrush"></button>
           <button class="btn tool on" id="tBrush" title="Brush" aria-label="Brush"></button>
           <button class="btn tool" id="tErase" title="Eraser" aria-label="Eraser"></button>
+          <button class="btn tool" id="tZoom" title="Magnifier" aria-label="Magnifier"></button>
           <button class="btn tool" id="tUndo" title="Undo" aria-label="Undo"></button>
           <button class="btn tool" id="tClear" title="Clear all" aria-label="Clear all"></button>
         </div>
@@ -236,7 +243,7 @@
     </div>
 
     <div class="status">
-      <div class="grow" id="statL">For Help, ask the bar.</div>
+      <div class="grow" id="statL">For Help, find a friend.</div>
       <div id="statR">by VOID.RASTER</div>
     </div>
   </div>
@@ -318,8 +325,8 @@
 
   /* shown at the moment someone has just made something, which is the moment
      they are most likely to care who built the thing */
-  var CREDIT = '<div style="margin-top:12px;font-size:11px;color:#333">' +
-               'Wall by <a href="https://www.instagram.com/void.raster/" ' +
+  var CREDIT = '<div class="credit">Wall by ' +
+               '<a href="https://www.instagram.com/void.raster/" ' +
                'target="_blank" rel="noopener"><b>@void.raster</b></a></div>';
 
   function dlg(opts){
@@ -377,6 +384,41 @@
   const ctx = art.getContext('2d', { willReadFrequently: true });
   const DPR = Math.min(2, window.devicePixelRatio || 1);
 
+  /* ================= zoom =================
+     A view transform only. The bitmap in `art` is never scaled, moved or
+     resampled, so undo, the trim, and what gets sent to the wall are all
+     completely unaffected by whatever the zoom is doing. Brush and spray
+     radii stay in bitmap pixels too, which means a stroke looks thicker on
+     screen when zoomed but still covers the same fraction of the piece.
+
+     MS Paint behaviour: tap the magnifier, then tap the spot you want. That
+     avoids taking a gesture, in particular the two-finger straight line. */
+  const ZOOM = 2;
+  let zoom = 1, panX = 0, panY = 0, picking = false;
+
+  function applyZoom(){
+    const r = stage.getBoundingClientRect();
+    const maxX = Math.max(0, r.width  - r.width  / zoom);
+    const maxY = Math.max(0, r.height - r.height / zoom);
+    panX = Math.min(maxX, Math.max(0, panX));
+    panY = Math.min(maxY, Math.max(0, panY));
+    art.style.transformOrigin = '0 0';
+    art.style.transform = zoom === 1 ? ''
+      : 'scale(' + zoom + ') translate(' + (-panX) + 'px,' + (-panY) + 'px)';
+    tZoom.classList.toggle('on', zoom > 1 || picking);
+  }
+
+  /* Centre the view on a point given in stage CSS pixels. */
+  function zoomAt(cx, cy){
+    const r = stage.getBoundingClientRect();
+    zoom = ZOOM;
+    panX = cx - (r.width  / zoom) / 2;
+    panY = cy - (r.height / zoom) / 2;
+    applyZoom();
+  }
+  function zoomOut(){ zoom = 1; panX = panY = 0; applyZoom(); }
+
+
   function sizeCanvas(){
     const r = stage.getBoundingClientRect();
     const w = Math.max(1, Math.round(r.width * DPR));
@@ -390,6 +432,7 @@
     }
     art.width = w; art.height = h;
     if (snap) ctx.drawImage(snap, 0, 0, w, h);
+    applyZoom();          // the visible window is a fraction of a new size
   }
   window.addEventListener('resize', function(){ setTimeout(sizeCanvas, 60); });
   window.addEventListener('orientationchange', function(){ setTimeout(sizeCanvas, 250); });
@@ -535,7 +578,7 @@ function swapIcon(el, name, cls) {
     swapIcon(document.getElementById('taskIcon'), 'app');
     swapIcon(document.getElementById('startFlag'), 'start');
     var map = { tSpray:'airbrush', tBrush:'brush', tErase:'eraser',
-                tUndo:'undo', tClear:'clear' };
+                tZoom:'magnify', tUndo:'undo', tClear:'clear' };
     Object.keys(map).forEach(function (id) {
       setIcon(document.getElementById(id), map[id]);
     });
@@ -610,6 +653,14 @@ function swapIcon(el, name, cls) {
   tBrush.addEventListener('click', function(){ setTool('brush'); });
   tErase.addEventListener('click', function(){ setTool('erase'); });
 
+  /* Zoomed in -> go back out. Zoomed out -> arm, and the next tap on the
+     canvas picks the centre. Tapping it again while armed cancels. */
+  tZoom.addEventListener('click', function(){
+    if (zoom > 1){ picking = false; zoomOut(); hint('Zoomed out.'); }
+    else if (picking){ picking = false; applyZoom(); hint(''); }
+    else { picking = true; applyZoom(); hint('Tap the part you want to zoom into.'); }
+  });
+
   document.querySelectorAll('.size').forEach(function(b){
     b.addEventListener('click', function(){
       sizeIdx = +b.dataset.s;
@@ -651,6 +702,7 @@ function swapIcon(el, name, cls) {
             pushUndo();
             ctx.clearRect(0, 0, art.width, art.height);
             drips.length = 0;
+            picking = false; zoomOut();
           } },
         { label: 'Cancel' }
       ]
@@ -664,7 +716,10 @@ function swapIcon(el, name, cls) {
 
   function pt(e){
     const r = stage.getBoundingClientRect();
-    return { x: (e.clientX - r.left) * DPR, y: (e.clientY - r.top) * DPR };
+    return {
+      x: (panX + (e.clientX - r.left) / zoom) * DPR,
+      y: (panY + (e.clientY - r.top)  / zoom) * DPR
+    };
   }
   function dist(a, b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
 
@@ -754,6 +809,15 @@ function swapIcon(el, name, cls) {
   stage.addEventListener('pointerdown', function(e){
     if (dlgOpen) return;
     e.preventDefault();
+
+    /* Armed by the magnifier: this tap chooses the centre and draws nothing. */
+    if (picking){
+      const r = stage.getBoundingClientRect();
+      picking = false;
+      zoomAt(e.clientX - r.left, e.clientY - r.top);
+      hint('Magnifier again to zoom back out.');
+      return;
+    }
 
     // second finger while already drawing: rule a straight line to it
     if (activeId !== null && down) {
@@ -945,11 +1009,12 @@ function swapIcon(el, name, cls) {
           dlg({
             title: 'Sent',
             body: res.j && res.j.live
-              ? 'Your piece is <b>up on the wall right now</b>.<br>Look above the bar.' + CREDIT
+              ? 'Your piece is <b>up on the wall right now</b>.' + CREDIT
               : 'Your piece is <b>#' + res.j.position + ' in line</b>.<br>' +
-                'Watch the wall over the bar. It ignites once it is waved through.' + CREDIT,
+                'Watch the wall. It ignites once it is waved through.' + CREDIT,
             buttons: [
               { label: 'Paint another', onClick: function(){
+                  picking = false; zoomOut();
                   ctx.clearRect(0, 0, art.width, art.height);
                   drips.length = 0; undoStack.length = 0;
                 } },
@@ -1006,7 +1071,7 @@ function swapIcon(el, name, cls) {
       title: 'About Big Sun Wall',
       icon: ICON.info,
       body: '<b>Big Sun Wall \u201995</b><br>Paint (Blue Note Park Edition)<br><br>' +
-            'Spray a tag, hit Send, and it glows on the brick over the bar.<br><br>' +
+            'Spray a tag, hit Send, and it glows on the wall.<br><br>' +
             'Built by <b>void.raster</b><br>' +
             '<a href="https://www.instagram.com/void.raster/" target="_blank" rel="noopener">instagram.com/void.raster</a>'
     });
@@ -1032,10 +1097,22 @@ function swapIcon(el, name, cls) {
     'Brush for lines. Spray for glow.',
     'Draw big. Blank space gets trimmed.',
     'Second finger down rules a straight line.',
+    'Magnifier, then tap a spot, to zoom in.',
     'Please help offset the TTP.'
   ];
   let hi = 0;
+  let hintHold = 0;
+
+  /* Show a message and stop the rotation trampling it. Empty string releases. */
+  function hint(msg){
+    const el = document.getElementById('statL');
+    if (!msg){ hintHold = 0; el.textContent = hints[hi]; return; }
+    hintHold = Date.now() + 6000;
+    el.textContent = msg;
+  }
+
   setInterval(function(){
+    if (Date.now() < hintHold) return;
     hi = (hi + 1) % hints.length;
     document.getElementById('statL').textContent = hints[hi];
   }, 8000);

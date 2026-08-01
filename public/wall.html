@@ -648,15 +648,65 @@ function applyScheme(ix, remember) {
   if (remember) { try { localStorage.setItem('bsw_scheme', String(schemeIx)); } catch (e) {} }
 }
 
+/* ---------------- placement ----------------
+   The fitting happens here, not on the server, because W and H are only known
+   here. They are the inner stage: the window chrome and the toolbox are
+   outside them, and toggling either one changes the shape. The server used to
+   assume 16:9, which was wrong by about a third vertically and pushed the
+   outer column past the edge. */
+let GRID = { cols: 6, rows: 4, fill: 0.86 };   // overwritten by wall:meta
+
+function placeOf(t) {
+  const a = t.aspect || 1;
+  if (!W || !H) return { x: t.x || 0.5, y: t.y || 0.5, wFrac: t.scale || 0.1 };
+
+  const wallAR = W / H;
+  let x, y, wFrac;
+
+  if (typeof t.slot === 'number') {
+    const cellW = 1 / GRID.cols;
+    const cellH = 1 / GRID.rows;
+    wFrac = Math.min(GRID.fill * cellW, GRID.fill * cellH / (a * wallAR));
+    const hF = wFrac * a * wallAR;
+    const col = t.slot % GRID.cols;
+    const row = Math.floor(t.slot / GRID.cols);
+    x = (col + 0.5) * cellW + (t.jx || 0) * Math.max(0, cellW - wFrac) * 0.5;
+    y = (row + 0.5) * cellH + (t.jy || 0) * Math.max(0, cellH - hF) * 0.5;
+  } else {
+    /* A piece from an older build, out of data.json or the local cache. Its
+       size was worked out against the wrong aspect and cannot be recovered,
+       but it can at least be kept on the wall. */
+    wFrac = t.scale || 0.1;
+    x = t.x != null ? t.x : 0.5;
+    y = t.y != null ? t.y : 0.5;
+  }
+
+  const hFrac = wFrac * a * wallAR;
+
+  /* Keep the rotated corners on the wall. A rect of w x h turned by r covers
+     w|cos r| + h|sin r| across, so the clamp has to use that, not the raw
+     width, or the corners of the outer column still hang off the edge. */
+  const r = (t.rot || 0) * Math.PI / 180;
+  const c = Math.abs(Math.cos(r)), s = Math.abs(Math.sin(r));
+  const halfW = (wFrac * c + (hFrac / wallAR) * s) / 2;
+  const halfH = (hFrac * c + (wFrac * wallAR) * s) / 2;
+
+  x = halfW * 2 >= 1 ? 0.5 : Math.min(1 - halfW, Math.max(halfW, x));
+  y = halfH * 2 >= 1 ? 0.5 : Math.min(1 - halfH, Math.max(halfH, y));
+
+  return { x: x, y: y, wFrac: wFrac };
+}
+
 /* ---------------- drawing one tag ---------------- */
 function drawTag(g, t, alpha, scaleMul) {
   if (!t.loaded) return;
   const a = t.aspect || 1;
-  const w = t.scale * W * (scaleMul || 1);   // server fits this to its grid cell
-  const h = w * a;
+  const p = placeOf(t);
+  const w = p.wFrac * W * (scaleMul || 1);
+  const h = w * a;          // h in px is wFrac*W*a, which is exactly hFrac*H
 
   g.save();
-  g.translate(t.x * W, t.y * H);
+  g.translate(p.x * W, p.y * H);
   g.rotate((t.rot || 0) * Math.PI / 180);
   g.globalCompositeOperation = 'screen';   // light on brick, dark pixels vanish
   g.globalAlpha = alpha;
@@ -812,8 +862,8 @@ function openDB() {
 
 function cachePut(t) {
   if (!db) return;
-  const { id, name, image, x, y, rot, scale, aspect, approvedAt, ts } = t;
-  const rec = { id, name, image, x, y, rot, scale, aspect, approvedAt, ts };
+  const { id, name, image, x, y, rot, scale, aspect, approvedAt, ts, slot, jx, jy } = t;
+  const rec = { id, name, image, x, y, rot, scale, aspect, approvedAt, ts, slot, jx, jy };
   try { db.transaction('tags', 'readwrite').objectStore('tags').put(rec); } catch (e) {}
   try { db.transaction('archive', 'readwrite').objectStore('archive').put(rec); } catch (e) {}
 }
@@ -924,7 +974,12 @@ const socket = (typeof io === 'function')
 
 socket.on('connect',     () => { connected = true;  updateChrome(); });
 socket.on('disconnect',  () => { connected = false; updateChrome(); });
-socket.on('wall:meta',   () => {});
+socket.on('wall:meta',   m => {
+  if (m && m.grid && m.grid.cols && m.grid.rows) {
+    GRID = { cols: m.grid.cols, rows: m.grid.rows, fill: m.grid.fill || 0.86 };
+    bakeAll();   // placement depends on the grid, so redraw with the real one
+  }
+});
 socket.on('wall:batch',  items => items.forEach(t => addTag(t, false)));
 socket.on('wall:done',   () => scheduleBake());
 socket.on('wall:add',    t  => addTag(t, true));

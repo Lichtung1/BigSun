@@ -18,6 +18,7 @@ const QRCode = require('qrcode');
 const PORT = process.env.PORT || 3000;
 const MOD_PASSWORD = process.env.MOD_PASSWORD || 'bigsun';   // <-- change this (see README)
 const DATA_FILE = path.join(__dirname, 'data.json');
+const ARCHIVE_FILE = path.join(__dirname, 'archive.json');
 
 const COOLDOWN_MS = 45 * 1000;  // minimum gap between sends, per phone
 const MAX_PENDING = 200;        // moderation queue cap
@@ -35,33 +36,78 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 /* ---------------- state ---------------- */
 let pending = [];   // waiting for the moderator
-let approved = [];
-let archive = [];               // never pruned by the grid: this is the record  // on the wall
+let approved = [];  // on the wall
+let archive = [];   // never pruned by the grid: this is the record
 let nextId = 1;
 const lastSend = new Map(); // phone token -> last submit time
 
 try {
   if (fs.existsSync(DATA_FILE)) {
     const s = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    archive = Array.isArray(s.archive) ? s.archive : [];
     approved = Array.isArray(s.approved) ? s.approved : [];
     nextId = s.nextId || approved.length + 1;
+    // an archive written by an older build still lives in data.json
+    if (Array.isArray(s.archive)) archive = s.archive;
     console.log(`Loaded ${approved.length} saved pieces from data.json`);
   }
 } catch (e) {
   console.log('Could not load data.json (starting fresh):', e.message);
 }
 
+try {
+  if (fs.existsSync(ARCHIVE_FILE)) {
+    const a = JSON.parse(fs.readFileSync(ARCHIVE_FILE, 'utf8'));
+    if (Array.isArray(a.archive) && a.archive.length >= archive.length) archive = a.archive;
+    console.log(`Loaded ${archive.length} archived pieces from archive.json`);
+  }
+} catch (e) {
+  console.log('Could not load archive.json (starting fresh):', e.message);
+}
+
+/* The live file stays small and quick: it is written 4s after each approval,
+   so it must not carry the archive. JSON.stringify is synchronous and blocks
+   the event loop, which stalls socket.io and stutters the wall. */
 let saveTimer = null;
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    const slim = { approved: approved.slice(-DATA_KEEP), archive: archive.slice(-ARCHIVE_MAX), nextId };
+    const slim = { approved: approved.slice(-DATA_KEEP), nextId };
     fs.writeFile(DATA_FILE, JSON.stringify(slim), err => {
       if (err) console.log('Save failed:', err.message);
     });
   }, 4000);
 }
+
+/* The archive is big and does not need to be current. Written on its own slow
+   timer, and only when something new has landed, so a quiet room costs nothing.
+   Worst case on a crash is losing the last two minutes of pieces, and the wall
+   browser keeps its own IndexedDB copy regardless. */
+let archiveDirty = false;
+function saveArchive() {
+  if (!archiveDirty) return;
+  archiveDirty = false;
+  fs.writeFile(ARCHIVE_FILE, JSON.stringify({ archive: archive.slice(-ARCHIVE_MAX) }), err => {
+    if (err) { console.log('Archive save failed:', err.message); archiveDirty = true; }
+  });
+}
+setInterval(saveArchive, 120000);
+
+/* On the way out the write must be synchronous. An async write does not finish
+   before process.exit, which leaves a truncated, empty archive.json. */
+function shutdown() {
+  try {
+    if (archiveDirty) {
+      fs.writeFileSync(ARCHIVE_FILE, JSON.stringify({ archive: archive.slice(-ARCHIVE_MAX) }));
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ approved: approved.slice(-DATA_KEEP), nextId }));
+    console.log(`Saved ${archive.length} archived pieces on shutdown.`);
+  } catch (e) {
+    console.log('Shutdown save failed:', e.message);
+  }
+  process.exit(0);
+}
+process.on('SIGINT',  shutdown);
+process.on('SIGTERM', shutdown);
 
 // forget stale cooldown entries once an hour
 setInterval(() => {
@@ -106,33 +152,40 @@ function pickSlot() {
   return { slot: oldest.slot, retire: oldest.id };
 }
 
+/* The wall is the only thing that knows its own shape: the canvas is the inner
+   stage, inset inside the window chrome with the toolbox down one side, and it
+   changes again when the toolbox or status bar is toggled. Guessing it here was
+   the bug. So this hands the wall a slot and two jitter values and lets it do
+   the fitting against its real dimensions.
+
+   x, y and scale are still written for older wall pages and for anything
+   already sitting in data.json. Current wall pages ignore them. */
 function assignPlacement(aspect, slot) {
   const a = aspect || 1;
   const cellW = 1 / GRID_COLS;
   const cellH = 1 / GRID_ROWS;
 
-  /* Fit the piece inside its cell: cap by cell width, and by cell height
-     once the image's own proportions are taken into account. */
+  const jx = +(Math.random() * 2 - 1).toFixed(4);
+  const jy = +(Math.random() * 2 - 1).toFixed(4);
+
+  // legacy fallback maths, using the old assumed aspect
   const byWidth  = CELL_FILL * cellW;
   const byHeight = CELL_FILL * cellH / (a * WALL_AR);
   const wFrac = Math.min(byWidth, byHeight);
   const hFrac = wFrac * a * WALL_AR;
-
-  /* Drift inside whatever room is left over, so the grid never reads as a grid */
   const col = slot % GRID_COLS;
   const row = Math.floor(slot / GRID_COLS);
   const slackX = Math.max(0, cellW - wFrac) * 0.5;
   const slackY = Math.max(0, cellH - hFrac) * 0.5;
 
-  const x = (col + 0.5) * cellW + (Math.random() * 2 - 1) * slackX;
-  const y = (row + 0.5) * cellH + (Math.random() * 2 - 1) * slackY;
-
   return {
     slot: slot,
-    x: +x.toFixed(4),
-    y: +y.toFixed(4),
+    jx: jx,
+    jy: jy,
     rot: +(Math.random() * 8 - 4).toFixed(2),
-    scale: +wFrac.toFixed(4)      // width as a fraction of the wall
+    x: +((col + 0.5) * cellW + jx * slackX).toFixed(4),
+    y: +((row + 0.5) * cellH + jy * slackY).toFixed(4),
+    scale: +wFrac.toFixed(4)
   };
 }
 
@@ -271,6 +324,7 @@ function placeOnWall(item) {
   /* The grid cycles pieces off the wall to make room. The archive does not:
      it is the permanent record of everything that went up tonight. */
   archive.push(tag);
+  archiveDirty = true;
   if (archive.length > ARCHIVE_MAX) archive = archive.slice(-ARCHIVE_MAX);
   if (approved.length > MAX_APPROVED) approved = approved.slice(-MAX_APPROVED);
   io.to('wall').emit('wall:add', tag);
@@ -285,7 +339,10 @@ io.on('connection', socket => {
   /* ---- projector display ---- */
   if (auth.role === 'wall') {
     socket.join('wall');
-    socket.emit('wall:meta', { count: approved.length });
+    socket.emit('wall:meta', {
+      count: approved.length,
+      grid: { cols: GRID_COLS, rows: GRID_ROWS, fill: CELL_FILL }
+    });
     sendBatched(socket, 'wall:batch', approved, 'wall:done');
     return;
   }
